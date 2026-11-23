@@ -82,8 +82,7 @@
   @keyframes mbob2{50%{margin-top:-6px}}
   .mlock{position:sticky;top:30%;margin:0 auto;width:min(82%,380px);background:rgba(255,255,255,.96);color:#2b1a0e;border-radius:20px;padding:18px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:2}
   .mlock h3{margin:6px 0 4px;font-size:20px}.mlock p{margin:6px 0;font-size:14px;color:#5a4a33}.mlock .soon{display:inline-block;margin-top:6px;background:#ffb703;color:#3a1600;font-weight:900;border-radius:12px;padding:5px 12px}
-  /* nút ném đặt cao hơn mặt đất để không che đường phía trước */
-  .throw{bottom:30vh !important}
+  /* nút ném: màn dọc ở góc phải dưới, nằm trên phần đất bên dưới đường đi; màn ngang đặt cao bên phải */
   @media (orientation: landscape) and (max-height: 560px){ .throw{min-width:84px !important;height:84px !important;font-size:15px !important;bottom:auto !important;top:calc(env(safe-area-inset-top) + 130px)} }
   .throw{pointer-events:auto;position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom) + 28px);min-width:118px;height:118px;border-radius:50%;font-size:19px;line-height:1.15;background:radial-gradient(circle at 40% 35%,#ffe066,#f08c00);color:#3a1600;border:4px solid #fff;box-shadow:0 6px 0 #8a4b00;touch-action:none}
   .throw:active{transform:translateY(4px);box-shadow:none}
@@ -1684,15 +1683,10 @@ function drawSkyCartoon(horizon) {
   g.addColorStop(0, '#4aa3e0'); g.addColorStop(0.6, '#8fcdf2'); g.addColorStop(1, '#d6f0fb');
   ctx.fillStyle = g; ctx.fillRect(0, VIEW_Y, W, Math.max(1, horizon - VIEW_Y + 4));
   // mặt trời: nhỏ, góc trên bên phải, viền đậm
-  // mặt trời to, nằm giữa khoảng trời (không chạm thanh điểm bên trái và nút bên phải)
-  const r = LANDSCAPE ? 95 : 120, sx = LANDSCAPE ? W * 0.62 : W * 0.66, sy = LANDSCAPE ? VIEW_Y + 200 : clamp(horizon - 900, VIEW_Y + 420, horizon - 640);
-  const glow = ctx.createRadialGradient(sx, sy, r * 0.6, sx, sy, r * 2.6); glow.addColorStop(0, 'rgba(255,240,170,.55)'); glow.addColorStop(1, 'rgba(255,240,170,0)');
-  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(sx, sy, r * 2.6, 0, 7); ctx.fill();
-  ctx.save(); ctx.translate(sx, sy); ctx.rotate(timeAcc * 0.15); ctx.fillStyle = '#ffd43b'; ctx.strokeStyle = '#c77d00'; ctx.lineWidth = 5; ctx.lineJoin = 'round';
-  for (let i = 0; i < 10; i++) { ctx.rotate(Math.PI / 5); ctx.beginPath(); ctx.moveTo(-r * 0.17, -r - 8); ctx.lineTo(0, -r - r * 0.48); ctx.lineTo(r * 0.17, -r - 8); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-  ctx.restore();
-  ctx.fillStyle = '#ffe066'; ctx.strokeStyle = '#c77d00'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(sx, sy, r, 0, 7); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(sx - r * 0.33, sy - r * 0.36, r * 0.3, r * 0.18, -0.5, 0, 7); ctx.fill();
+  // mặt trời (ảnh sun_0): nằm ngay dưới nút quay phim ở góc phải trên; mây trôi ngang qua phía trước
+  const sunIm = img('sun'), ssz = LANDSCAPE ? 380 : 520, sx = W - (LANDSCAPE ? 520 : 190), sy = VIEW_Y + (LANDSCAPE ? 220 : 730);
+  if (sunIm) { const pul = 1 + 0.025 * Math.sin(timeAcc * 1.6); ctx.save(); ctx.translate(sx, sy); ctx.rotate(timeAcc * 0.04); ctx.drawImage(sunIm, -ssz * pul / 2, -ssz * pul / 2, ssz * pul, ssz * pul); ctx.restore(); }
+  else { ctx.fillStyle = '#ffe066'; ctx.beginPath(); ctx.arc(sx, sy, 90, 0, 7); ctx.fill(); }
   // mây hoạt hình trôi chậm
   for (let i = 0; i < 5; i++) {
     const span = W + 700, x = (((i * 470 - cam * Z * 0.05 - timeAcc * 12) % span) + span) % span - 350;
@@ -2238,7 +2232,7 @@ function renderMap(ch) {
   $('mapChips').innerHTML = CHAPTERS.map(c => `<button data-ch="${c.n}" class="${c.n === mapCh ? 'on' : ''} ${c.open ? '' : 'lock'}" style="--c:${CH_PAL[c.n][0]};--l:${CH_PAL[c.n][1]}">${c.open ? '' : '🔒 '}${c.n} ${c.emo}</button>`).join('');
   const scroll = $('mapScroll'), inner = $('mapInner'), head = document.querySelector('#levels .maphead');
   head.style.background = pc; head.style.color = '#fff';
-  const Wm = Math.round(Math.min(scroll.clientWidth || innerWidth, 560)), nd = Math.round(clamp(Wm * 0.2, 70, 104)), gap = Math.round(nd * 2.05);
+  const Wm = Math.round(Math.min(scroll.clientWidth || innerWidth, 560)), nd0 = clamp(Wm * 0.2, 70, 104), nd = Math.round(nd0 * 0.8), gap = Math.round(nd0 * 1.85); // nút chặng = 80%
   const N = stages.length, Hm = Math.round(gap * N + nd * 3.2);
   inner.style.width = Wm + 'px'; inner.style.height = Hm + 'px';
   scroll.style.background = `linear-gradient(${pc}22, ${pc}22), #fff`;
