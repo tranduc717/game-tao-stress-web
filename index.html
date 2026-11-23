@@ -16,8 +16,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@600;800;900&display=swap" rel="stylesheet">
 <style>
-  html,body{margin:0;height:100%;background:#0d0618;overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-  canvas{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block;touch-action:none}
+  html,body{margin:0;height:100%;background:#0d0618 linear-gradient(180deg,#2f6fb3 0%,#7fc0ea 55%,#3d6b2a 100%) fixed;overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  canvas{position:fixed;left:0;top:0;width:100vw;height:100vh;display:block;touch-action:none} /* kích thước thật do JS đặt: giữ đúng tỉ lệ, thừa thì để viền (letterbox), không kéo giãn */
+  .screen > *, .sheet .card, .round, .rec, .throw{zoom:var(--uiz,1)} /* menu to ra trên màn lớn (27 inch…) */
   #ui{position:fixed;inset:0;pointer-events:none;font-family:"Be Vietnam Pro",system-ui,sans-serif;color:#fff}
   .screen{pointer-events:auto;position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:calc(env(safe-area-inset-top) + 16px) 22px calc(env(safe-area-inset-bottom) + 16px);background:radial-gradient(ellipse at 50% 30%,rgba(45,18,80,.82),rgba(10,4,20,.94));text-align:center;overflow-y:auto}
   .screen[hidden]{display:none}
@@ -82,7 +83,7 @@
     <button class="big" data-act="levels">🗺️ Phiêu lưu 12 màn</button>
     <button class="big" data-act="board">🏆 Bảng xếp hạng</button>
     <div class="row"><button class="small" data-act="sound" id="soundBtn">🔊 Âm thanh: Bật</button><button class="small" data-act="install" id="installBtn" hidden>📲 Cài vào máy</button></div>
-    <p class="hint">Chạm để nhảy · Chạm 2 lần nhảy đôi · Nhặt đồ để ném, nhặt quả cầu để có kỹ năng · Đạp đầu con vật để hạ</p>
+    <p class="hint">Chạm để nhảy · Giữ tay để nhảy cao hơn · Nhặt đồ để ném, nhặt quả cầu để có kỹ năng · Đạp đầu con vật để hạ</p>
   </section>
   <section id="levels" class="screen" hidden>
     <h2>🗺️ Phiêu lưu</h2>
@@ -127,6 +128,7 @@
     <button class="big go" data-act="resume">▶ Tiếp tục</button>
     <button class="big" data-act="restart">↻ Chơi lại</button>
     <button class="big" data-act="menu">☰ Menu</button>
+    <button class="small" data-act="board">🏆 Bảng xếp hạng</button>
   </section>
   <button id="recBtn" class="rec" aria-label="Quay video màn hình">⏺</button>
   <div id="recSheet" class="sheet" hidden>
@@ -159,21 +161,34 @@ function computeLayout() {
   else { W = 1080; H = Math.round(Math.max(1500, Math.min(2400, W * ih / iw))); Z = 1.7; }
   VIEW_H = H; BOTTOM_Y = VIEW_Y + VIEW_H; VW = W / Z;
   ROW0 = ROWS + 0.5 - VIEW_H / (T * Z);
-  HQ = Math.max(0.6, Math.min(1, (iw * (devicePixelRatio || 1)) / W));
+  // Giữ đúng tỉ lệ khung game: nếu màn quá dài/quá ngắn thì chừa viền, KHÔNG kéo giãn hình
+  const k = Math.min(iw / W, ih / H);
+  CSS_W = Math.round(W * k); CSS_H = Math.round(H * k);
+  HQ = Math.max(0.6, Math.min(1, (CSS_W * (devicePixelRatio || 1)) / W));
+  // menu HTML: phóng to theo màn (điện thoại = 1, màn 27 inch ≈ 1,8)
+  UIZ = Math.max(1, Math.min(2.2, Math.min(iw / 480, ih / 760)));
 }
+let CSS_W, CSS_H, UIZ = 1;
 computeLayout();
+function fitCanvas() {
+  const st = cv.style;
+  st.width = CSS_W + 'px'; st.height = CSS_H + 'px';
+  st.left = Math.round((innerWidth - CSS_W) / 2) + 'px'; st.top = Math.round((innerHeight - CSS_H) / 2) + 'px';
+  document.documentElement.style.setProperty('--uiz', UIZ.toFixed(3));
+}
 let GAME = { mode: 'menu', level: 0, speed: 1, bossEvery: 300, goal: Infinity, biome: 0, trollT: 6, attempts: 0, paused: false, nextHat: 140 };
-const G = 2500, RUN = 300, JUMP_V = 1020;
+// JUMP_V: giữ tay = cao ~3,5 ô · MIN_JUMP_V: chạm nhanh vẫn cao ~2,6 ô (trước đây chỉ 37px, dưới 1 ô)
+const G = 2500, RUN = 300, JUMP_V = 1020, MIN_JUMP_V = 890;
 const GUN = false; // bản làng quê: không bắn súng, chỉ nhảy và đạp đầu
 const FONT = '"Be Vietnam Pro","Arial Black",Arial,sans-serif';
 
 const cv = document.getElementById('c');
-cv.width = Math.round(W * HQ); cv.height = Math.round(H * HQ);
+cv.width = Math.round(W * HQ); cv.height = Math.round(H * HQ); fitCanvas();
 let _lay = innerWidth + 'x' + innerHeight;
 function relayout() { // xoay máy / đổi cỡ cửa sổ: tính lại khung hình, giữ nguyên ván đang chơi
   const k = innerWidth + 'x' + innerHeight; if (k === _lay) return; _lay = k;
   const camX = typeof cam === 'number' ? cam : 0, px = typeof P !== 'undefined' && P ? P.x : 0;
-  computeLayout(); cv.width = Math.round(W * HQ); cv.height = Math.round(H * HQ);
+  computeLayout(); cv.width = Math.round(W * HQ); cv.height = Math.round(H * HQ); fitCanvas();
   if (typeof cam === 'number' && P) cam = Math.max(0, px - 200);
   document.body.classList.toggle('land', LANDSCAPE);
 }
@@ -519,6 +534,9 @@ const CHUNKS = {
 };
 const NORMAL = ['flat', 'flat', 'gap', 'gap', 'spikes', 'spikes', 'step', 'step', 'pipe', 'roadRock', 'roadBranch', 'roadBanana', 'roadStraw', 'enemy', 'enemy', 'enemy', 'crabWalk', 'turtleShell'];
 const TROLLS = ['monkeyBridge', 'monkeyBridge', 'hiddenSpike', 'fakeFloor', 'hiddenBlock', 'appleTree', 'appleTree', 'thwomp', 'landingSpike', 'snakeBush', 'catBush', 'roosterFly', 'dogChase', 'buffaloCharge', 'goatPush'];
+const EASY = ['flat', 'gap', 'spikes', 'step', 'roadBranch', 'roadStraw'];
+const SAFE_START = 30;
+function breathTiles(dist) { return dist < 150 ? 4 : dist < 400 ? 3 : 2; }
 function ensureGen() {
   const need = Math.floor(cam / T) + 40;
   while (gen.x < need) {
@@ -527,10 +545,16 @@ function ensureGen() {
     if (GAME.mode === 'adventure' && !arena && distAhead >= GAME.goal) { gen.g = 14; flat(3); gen.finishX = gen.x + 1; addEnt({ k: 'flag', x: (gen.x + 1) * T, y: gen.g * T, w: 1, h: 1 }); flat(24); gen.finished = true; continue; }
     if (!arena && (gen.forceBoss || distAhead >= gen.nextBoss)) { buildArena(); continue; }
     if (gen.x < 20) { CHUNKS.flat(); continue; }
-    const trollChance = GAME.mode === 'adventure' ? 0.2 + GAME.level * 0.025 : 0.3 + Math.min(0.22, distAhead / 1800);
     const cx0 = gen.x;
-    if (gen.sinceTroll >= 2 && Math.random() < trollChance) { CHUNKS[pick(TROLLS)](); gen.sinceTroll = 0; }
-    else { CHUNKS[pick(NORMAL)](); gen.sinceTroll++; }
+    // 30m đầu: chỉ vật cản dễ để làm quen, chưa có bẫy troll
+    if (distAhead < SAFE_START) { CHUNKS[pick(EASY)](); placeDecor(cx0, gen.x); continue; }
+    const trollChance = GAME.mode === 'adventure' ? 0.2 + GAME.level * 0.025 : 0.3 + Math.min(0.22, distAhead / 1800);
+    let kind;
+    if (gen.sinceTroll >= 2 && Math.random() < trollChance) { kind = pick(TROLLS); gen.sinceTroll = 0; }
+    else { kind = pick(NORMAL); gen.sinceTroll++; }
+    CHUNKS[kind]();
+    // nhịp thở: đoạn đường bằng sau mỗi chướng ngại, ngắn dần khi đi xa (≈1,2 giây → 0,6 giây)
+    if (kind !== 'flat') flat(breathTiles(distAhead));
     placeDecor(cx0, gen.x);
   }
   for (const k of cols.keys()) if (k < cam / T - 6) cols.delete(k);
@@ -781,11 +805,8 @@ function ai() {
   const now = performance.now();
   const canJump = P.onGround || now - (P.lastGroundAt || 0) < 90;   // nhảy trễ một chút vẫn được
   if (INPUT.pressAt && now - INPUT.pressAt < 140) {
-    if (canJump && P.jumpCd <= 0) { INPUT.pressAt = 0; P.dbl = false; P.airJumps = 1; jump(true); if (!INPUT.held && P.vy < -430) P.vy = -430; }
-    else if (!P.onGround && P.airJumps > 0 && P.jt > 0.06) { // chạm lần 2 trên không = nhảy đôi
-      INPUT.pressAt = 0; P.airJumps = 0; P.dbl = true; P.vy = -JUMP_V; P.jt = 0; SFX.jump();
-      burst(P.x + P.w / 2, P.y + P.h, '#ffffff', 10);
-    }
+    // Một cú nhảy duy nhất (đã bỏ nhảy đôi): chạm nhanh vẫn nhảy đủ cao, giữ tay thì cao hơn
+    if (canJump && P.jumpCd <= 0) { INPUT.pressAt = 0; jump(true); if (!INPUT.held && P.vy < -MIN_JUMP_V) P.vy = -MIN_JUMP_V; }
   }
 }
 function aiBoss() {
@@ -1156,7 +1177,7 @@ function killPlayer(cause, owner) {
     say(pick(LINES.shieldSave), { prio: 2, key: 'shield', gap: 3000 });
     return;
   }
-  SFX.die(); P.alive = false; state = 'dying'; stateT = 1.1; P.vy = -950; P.dieY = null;
+  SFX.die(); P.alive = false; state = 'dying'; stateT = 0.85; P.vy = -950; P.dieY = null;
   if (A.d_run && cause !== 'pit') { P.vy = -260; P.dieY = P.y; } // bộ đôi ngã sõng soài tại chỗ
   else if (A.d_run) { P.vy = -420; P.dieY = (ROWS - 3) * T + 62 - P.h; for (let i = 0; i < 3; i++) burst(P.x + P.w / 2 + (i - 1) * 50, (ROWS - 3) * T + 30, '#a5d8ff', 10); } // rơi xuống ao: nằm ngửa giữa hồ sen
   P.vx = 0; shakeT = 0.3;
@@ -1394,7 +1415,7 @@ function report(body) { return;
   fetch('/api/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     .then(r => r.json()).then(j => { session.deaths = j.deaths; session.bestDistance = j.best; }).catch(() => {});
 }
-function banner(text, color, t = 2) { banners.push({ text, color, t, max: t }); if (banners.length > 3) banners.shift(); }
+function banner(text, color, t = 2) { banners = banners.filter(x => x.text !== text); banners.push({ text, color, t: Math.min(t, 1.6), max: Math.min(t, 1.6) }); if (banners.length > 2) banners.shift(); } // tối đa 2 dòng, ngắn, nhỏ để không che đường
 function pushFeed(text, color) { feed.push({ text, color, t: performance.now() }); if (feed.length > 6) feed.shift(); }
 function onGame(ev) {
   const u = ev.user;
@@ -1649,7 +1670,7 @@ function drawPlayer() {
   if (P.ride > 0 && P.alive) ok = spr('p_buffalo', Math.floor(timeAcc * 10), cx + 6, by + 6, 150);
   else if (duo) {
     const flip = P.vx < -5;
-    if (!P.alive) { const t = 1.1 - stateT; ok = sprA('d_die', state === 'dying' ? (t < 0.15 ? 0 : t < 0.4 ? 1 : t < 0.7 ? 2 : 3) : 3, cx, by, 118); }
+    if (!P.alive) { const t = (0.85 - stateT) * 1.3; ok = sprA('d_die', state === 'dying' ? (t < 0.15 ? 0 : t < 0.4 ? 1 : t < 0.7 ? 2 : 3) : 3, cx, by, 118); }
     else if (state === 'won') ok = sprA('d_win', Math.floor(timeAcc * 4) % 3, cx, by, 120);
     else if (P.escape > 0) { // heo xổng: vẽ neo mép trái để người đứng yên, heo chạy ra phía trước
       const t = 2.2 - P.escape, k = t < 0.35 ? 0 : t < 1.0 ? 1 : t < 1.6 ? 2 : 3, im = img('d_escape', k);
@@ -1783,11 +1804,11 @@ function drawBottom() {
 function drawOverlay() {
   // banner
   banners.forEach((b, i) => {
-    const k = Math.min(1, (b.max - b.t) * 6), y = VIEW_Y + 330 + i * 86;
+    const k = Math.min(1, (b.max - b.t) * 6), y = VIEW_Y + SAFE + 300 + i * 64;
     ctx.save(); ctx.globalAlpha = Math.min(1, b.t * 3); ctx.translate(W / 2, y); ctx.scale(0.6 + 0.4 * k, 0.6 + 0.4 * k);
-    ctx.font = `900 46px ${FONT}`; const w = ctx.measureText(b.text).width + 60;
-    rr(-w / 2, -36, w, 72, 36); ctx.fillStyle = 'rgba(20,6,40,.85)'; ctx.fill(); ctx.strokeStyle = b.color; ctx.lineWidth = 5; ctx.stroke();
-    text(b.text, 0, 2, 46, b.color, 'center', 900); ctx.restore();
+    ctx.font = `900 32px ${FONT}`; const w = ctx.measureText(b.text).width + 44;
+    rr(-w / 2, -26, w, 52, 26); ctx.fillStyle = 'rgba(20,6,40,.7)'; ctx.fill(); ctx.strokeStyle = b.color; ctx.lineWidth = 3; ctx.stroke();
+    text(b.text, 0, 2, 32, b.color, 'center', 900); ctx.restore();
   });
   if (boss && !boss.dying) {
     const x = 140, y = VIEW_Y + 270, w = W - 280;
@@ -1843,6 +1864,7 @@ persist();
 cfg.musicEnabled = !SAVE.muted; cfg.volume = SAVE.muted ? 0 : 0.9;
 const LEVELS = 12;
 const TROLLBOSS = { uniqueId: 'trumtroll', nickname: 'Trùm Troll' };
+const WEB_TROLL_BOSS = false;
 const AUTO_TROLLS = ['spike', 'collapse', 'apples', 'triangle', 'enemies', 'dog', 'goose', 'bees', 'bull', 'monkey', 'pig', 'pig', 'car', 'npc'];
 
 // ---- điều khiển chạm ----
@@ -1853,9 +1875,9 @@ function press() {
 }
 function release() {
   INPUT.held = false;
-  if (state === 'play' && P && !P.dbl && P.vy < -430 && P.jt < 0.35) P.vy = -430; // thả tay sớm = nhảy thấp
+  if (state === 'play' && P && P.vy < -MIN_JUMP_V && P.jt < 0.35) P.vy = -MIN_JUMP_V; // thả tay sớm = nhảy thấp hơn một chút, không bao giờ "nhảy hụt"
 }
-cv.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+addEventListener('pointerdown', e => { const t = e.target; if (t === cv || t === document.body || t === document.documentElement || t === document.getElementById('ui')) { e.preventDefault(); press(); } }); // chạm cả vào viền hai bên cũng nhảy
 addEventListener('pointerup', release); addEventListener('pointercancel', release);
 addEventListener('keydown', e => { if ((e.code === 'Space' || e.code === 'ArrowUp') && !e.repeat) { e.preventDefault(); press(); } if (e.code === 'Escape') pauseGame(); });
 addEventListener('keyup', e => { if (e.code === 'Space' || e.code === 'ArrowUp') release(); });
@@ -1894,12 +1916,21 @@ function onDeathDone() {
     $('overKiller').textContent = lastKiller ? '😈 Bị Trùm Troll chơi khăm!' : pick(['Gai ở đâu ra vậy trời!', 'Cú lừa thế kỷ!', 'Tay to quá, chết vì quá đẹp trai!', 'Đẳng cấp là mãi mãi, mạng thì không!']);
     $('overFace').src = ASSET_BASE + (lastKiller ? 'face_0' : 'face_1') + EXT;
     $('overRank').textContent = '';
-    showScreen('over');
-    submitScore('endless', score, 0, 1).then(() => fetchRank('endless', SAVE.best)).then(r => { if (r) $('overRank').textContent = `🏆 Hạng ${r} trên bảng xếp hạng`; }).catch(() => {});
+    submitScore('endless', score, 0, 1).then(() => fetchRank('endless', SAVE.best)).then(r => { if (r) { $('overRank').textContent = `🏆 Hạng ${r} trên bảng xếp hạng`; if (lastRun) lastRun.rank = r; } }).catch(() => {});
+    // chơi lại tức thì: không hiện bảng GAME OVER, chỉ hiện dòng tóm tắt trên màn hình (bảng xếp hạng vẫn xem được trong nút Tạm dừng)
+    quickRestart({ text: isBest && score > 0 ? `🎉 KỶ LỤC MỚI ${score}m!` : `💀 ${score}m · Kỷ lục ${SAVE.best}m`, best: isBest && score > 0 });
   } else {
     $('failInfo').textContent = `Màn ${GAME.level} · Lần thử thứ ${GAME.attempts} · Đi được ${Math.floor(run.dist)}/${GAME.goal}m`;
-    showScreen('fail');
+    quickRestart({ text: `💀 Màn ${GAME.level} · lần thử ${GAME.attempts} · ${Math.floor(run.dist)}/${GAME.goal}m`, best: false });
   }
+}
+let lastRun = null;
+function quickRestart(info) {
+  lastRun = { ...info, until: performance.now() + 2600 };
+  setTimeout(() => {
+    if (state !== 'over' || GAME.paused) return;
+    if (GAME.mode === 'endless') startEndless(); else startLevel(GAME.level);
+  }, 450);
 }
 function levelWin() {
   if (state !== 'play') return;
@@ -2020,6 +2051,12 @@ drawHUD = function () {
   text(GAME.mode === 'endless' ? `Kỷ lục ${Math.max(SAVE.best, Math.floor(run.dist))}m` : `Màn ${GAME.level} · đích ${GAME.goal}m`, 50, y + 78, 38, '#fff', 'left', 800, 6);
   if (GAME.mode === 'adventure') { const k = clamp(run.dist / GAME.goal, 0, 1); rr(24, y + 116, 560, 20, 10); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fill(); rr(24, y + 116, 560 * k, 20, 10); ctx.fillStyle = '#69db7c'; ctx.fill(); }
   for (let i = 0; i < shields; i++) spr('icon', 0, 640 + i * 76, y + 40, 66);
+  if (lastRun && performance.now() < lastRun.until && state === 'play') { // tóm tắt lượt vừa chết, hiện 2,6 giây rồi mờ dần
+    const a = clamp((lastRun.until - performance.now()) / 500, 0, 1), msg = lastRun.text + (lastRun.rank ? ` · Hạng ${lastRun.rank}` : '');
+    ctx.save(); ctx.globalAlpha = a; ctx.font = `900 38px ${FONT}`; const w = ctx.measureText(msg).width + 56, cy = y + 190;
+    rr(W / 2 - w / 2, cy - 32, w, 64, 32); ctx.fillStyle = lastRun.best ? 'rgba(120,70,0,.85)' : 'rgba(20,6,40,.75)'; ctx.fill();
+    text(msg, W / 2, cy + 2, 38, lastRun.best ? '#ffd43b' : '#fff', 'center', 900, 6); ctx.restore();
+  }
 };
 // ---- đếm lượt vào và người đang chơi (Supabase) ----
 const nf = n => Number(n || 0).toLocaleString('vi-VN');
@@ -2088,10 +2125,11 @@ function playFrame(now) {
 }
 
 function playTick(dt) {
-  if (P.onGround) { P.lastGroundAt = performance.now(); P.airJumps = 1; P.dbl = false; }
+  if (P.onGround) P.lastGroundAt = performance.now();
   if (state !== 'play') return;
   GAME.trollT -= dt;
-  if (GAME.trollT <= 0 && !(arena && arena.active) && !gen.finished) {
+  // "Trùm Troll" tự thả bẫy là cơ chế của bản TikTok LIVE; bản web tắt đi để bẫy chỉ đến từ màn chơi
+  if (WEB_TROLL_BOSS && GAME.trollT <= 0 && !(arena && arena.active) && !gen.finished) {
     const a = pick(AUTO_TROLLS); enqueue(a, TROLLBOSS, 1); banner(`😈 TRÙM TROLL: ${ACTION_NAME[a]}`, '#ff8787', 1.6);
     GAME.trollT = GAME.mode === 'endless' ? Math.max(3.5, 9 - run.dist / 120) : Math.max(4, 10.5 - GAME.level * 0.5);
     GAME.trollT *= rand(0.8, 1.25);
