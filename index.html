@@ -45,39 +45,41 @@
   .throw.empty{filter:grayscale(1);opacity:.55}
 
   /* ---- Sơ đồ chặng (kiểu đường uốn lượn) ---- */
-  #levels.map{padding:0;gap:0;justify-content:flex-start;background:#e8dcb8}
+  #levels.map{padding:0;gap:0;justify-content:flex-start;background:#fff}
   #levels.map > *{zoom:1 !important}
   .maphead{width:100%;box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 10px) 14px 8px;background:#fff;color:#2b1a0e;box-shadow:0 2px 10px rgba(0,0,0,.12);z-index:3}
-  .maphead .back{width:46px;height:46px;border-radius:50%;background:#f3e6c6;color:#2b1a0e;font-size:24px;flex:0 0 auto}
-  .maphead h2{flex:1;font-size:clamp(16px,4.6vw,22px);margin:0;text-align:center;color:#2b1a0e;line-height:1.2}
-  .mstars{font-size:15px;font-weight:900;color:#e8590c;white-space:nowrap}
-  .chips{width:100%;box-sizing:border-box;display:flex;gap:8px;overflow-x:auto;padding:8px 12px;background:#fff8e6;z-index:3;scrollbar-width:none;flex:0 0 auto}
+  .maphead .back{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.35);color:#fff;font-size:24px;flex:0 0 auto}
+  .maphead h2{flex:1;font-size:clamp(16px,4.6vw,22px);margin:0;text-align:center;color:#fff;line-height:1.2;text-shadow:0 2px 0 rgba(0,0,0,.15)}
+  .mstars{font-size:15px;font-weight:900;color:#fff;white-space:nowrap;background:rgba(0,0,0,.12);padding:4px 10px;border-radius:12px}
+  .chips{width:100%;box-sizing:border-box;display:flex;gap:8px;overflow-x:auto;padding:8px 12px;background:#fff;border-bottom:2px solid #eee;z-index:3;scrollbar-width:none;flex:0 0 auto}
   .chips::-webkit-scrollbar{display:none}
   .chips button{flex:0 0 auto;min-height:38px;padding:0 12px;border-radius:19px;background:#fff;color:#5a3c14;border:2px solid #e8d3a5;font-size:14px}
-  .chips button.on{background:#ffb703;color:#3a1600;border-color:#e08a00}
+  .chips button.on{background:var(--c);color:#fff;border-color:var(--l);box-shadow:0 3px 0 var(--l)}
   .chips button.lock{color:#a08b66}
   #mapScroll{flex:1 1 auto;min-height:0;width:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:flex;justify-content:center;overscroll-behavior:contain;touch-action:pan-y}
-  #mapInner{position:relative;flex:0 0 auto;background-size:cover;background-position:center}
-  #mapInner svg{position:absolute;left:0;top:0;pointer-events:none}
-  .mnode{position:absolute;transform:translate(-50%,-62%);padding:0;background:none;border-radius:50%;touch-action:manipulation}
-  .mnode i{position:absolute;left:0;right:0;bottom:0;height:58%;border-radius:50%;background:#46506a;box-shadow:inset 0 -7px 0 #2e3548,0 6px 10px rgba(0,0,0,.25)}
-  .mnode b{position:absolute;left:5%;right:5%;top:0;height:74%;border-radius:50%;background:radial-gradient(circle at 50% 28%,#9a9a9a,#454545 70%);display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.35);box-shadow:inset 0 -8px 0 rgba(0,0,0,.22)}
-  .mnode.done b{background:radial-gradient(circle at 50% 28%,#ffe58a,#f5a300 72%)}
-  .mnode.cur b{background:radial-gradient(circle at 50% 28%,#ffd34d,#ff7a00 72%)}
-  .mnode.cur{animation:mpulse 1.1s ease-in-out infinite}
-  .mnode.boss b{background:radial-gradient(circle at 50% 28%,#ff8a8a,#c92a2a 72%)}
-  .mnode.boss.lock b{background:radial-gradient(circle at 50% 28%,#b08585,#5c3a3a 72%)}
-  .mnode.goal b{background:radial-gradient(circle at 50% 28%,#b2f2bb,#2f9e44 72%)}
-  .mnode .st{position:absolute;top:96%;left:50%;transform:translateX(-50%);font-size:15px;color:#ffb300;white-space:nowrap;text-shadow:0 2px 0 #7a4a00;letter-spacing:1px}
-  @keyframes mpulse{50%{transform:translate(-50%,-62%) scale(1.08)}}
-  .mlabel{position:absolute;transform:translateY(-50%);background:rgba(255,255,255,.93);color:#5a3c14;font-size:12px;font-weight:800;padding:4px 10px;border-radius:12px;white-space:nowrap;pointer-events:none;box-shadow:0 2px 0 rgba(0,0,0,.12)}
-  .mlabel.lk{color:#9b8a6a}
-  .mlabel.curl{background:#ff8c00;color:#fff;font-size:13px;box-shadow:0 3px 0 #b35c00}
-  .mdeco{position:absolute;pointer-events:none;transform:translate(-50%,-100%);filter:drop-shadow(0 6px 4px rgba(0,0,0,.18))}
-  .mhero{position:absolute;pointer-events:none;transform:translate(-50%,-100%);animation:mhop .45s ease-in-out infinite alternate;filter:drop-shadow(0 6px 4px rgba(0,0,0,.25))}
-  @keyframes mhop{to{margin-top:-10px}}
-  .mbubble{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#2b1a0e;font-weight:900;font-size:15px;padding:6px 12px;border-radius:12px;border:2px solid #ff9f1c;white-space:nowrap;pointer-events:none}
-  .mbubble:after{content:'';position:absolute;left:50%;bottom:-9px;margin-left:-8px;border:8px solid transparent;border-top-color:#ff9f1c;border-bottom:0}
+  #mapInner{position:relative;flex:0 0 auto;background-size:100% auto;background-repeat:repeat-y;background-position:center top}
+  #mapInner > svg{position:absolute;left:0;top:0;pointer-events:none}
+  .mnode{position:absolute;transform:translate(-50%,-50%);padding:0;background:none;border-radius:50%;touch-action:manipulation;box-shadow:none}
+  .mnode b{position:absolute;inset:0 0 10% 0;border-radius:50%;background:var(--c);box-shadow:0 9px 0 var(--l);display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden}
+  .mnode b:before{content:'';position:absolute;left:12%;top:10%;width:76%;height:34%;border-radius:50%;background:rgba(255,255,255,.22);transform:rotate(-18deg)}
+  .mnode b svg{position:absolute;left:50%;top:50%;width:46%;height:46%;transform:translate(-50%,-50%);filter:drop-shadow(0 2px 0 rgba(0,0,0,.12))}
+  .mnode.done b{background:#ffd54f;box-shadow:0 9px 0 #e0a800;color:#c77d00}
+  .mnode.lock b{background:#e5e5e5;box-shadow:0 9px 0 #c9c9c9;color:#afafaf}
+  .mnode.goal b{background:#ffd54f;box-shadow:0 9px 0 #e0a800;color:#a86500}
+  .mnode.goal:not(.done) b{background:#e5e5e5;box-shadow:0 9px 0 #c9c9c9;color:#b0b0b0}
+  .mnode.cur{animation:mbob 1.6s ease-in-out infinite}
+  .mnode .ring{position:absolute;left:-14%;top:-15%;width:128%;height:128%;border-radius:50%;border:7px solid #e5e5e5;box-sizing:border-box}
+  .mnode .ring:after{content:'';position:absolute;inset:-7px;border-radius:50%;border:7px solid transparent;border-top-color:var(--c);border-right-color:var(--c)}
+  @keyframes mbob{50%{transform:translate(-50%,-56%)}}
+  .mname{position:absolute;transform:translateX(-50%);max-width:46%;text-align:center;color:#4b4b4b;font-size:12.5px;font-weight:800;line-height:1.25;pointer-events:none;text-shadow:0 1px 0 #fff,0 0 6px #fff}
+  .mname.lk{color:#9b9b9b}
+  .mname em{display:block;font-style:normal;color:#ffb300;font-size:15px;letter-spacing:1px;text-shadow:0 1px 0 #b77900}.mname em s{color:#d6d6d6;text-decoration:none;text-shadow:none}
+  .mdeco{position:absolute;pointer-events:none;transform:translate(-50%,-100%);filter:drop-shadow(0 5px 3px rgba(0,0,0,.12))}
+  .mhero{position:absolute;pointer-events:none;transform:translate(-50%,-100%);animation:mhop .45s ease-in-out infinite alternate;filter:drop-shadow(0 6px 4px rgba(0,0,0,.2))}
+  @keyframes mhop{to{margin-top:-8px}}
+  .mbubble{position:absolute;transform:translate(-50%,-100%);background:#fff;font-weight:900;font-size:15px;letter-spacing:.5px;padding:8px 14px;border-radius:14px;border:3px solid;white-space:nowrap;pointer-events:none;animation:mbob2 1.6s ease-in-out infinite}
+  .mbubble:after{content:'';position:absolute;left:50%;bottom:-11px;margin-left:-9px;width:14px;height:14px;background:#fff;border-right:3px solid;border-bottom:3px solid;border-color:inherit;transform:rotate(45deg)}
+  @keyframes mbob2{50%{margin-top:-6px}}
   .mlock{position:sticky;top:30%;margin:0 auto;width:min(82%,380px);background:rgba(255,255,255,.96);color:#2b1a0e;border-radius:20px;padding:18px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:2}
   .mlock h3{margin:6px 0 4px;font-size:20px}.mlock p{margin:6px 0;font-size:14px;color:#5a4a33}.mlock .soon{display:inline-block;margin-top:6px;background:#ffb703;color:#3a1600;font-weight:900;border-radius:12px;padding:5px 12px}
   /* nút ném đặt cao hơn mặt đất để không che đường phía trước */
@@ -1682,18 +1684,21 @@ function drawSkyCartoon(horizon) {
   g.addColorStop(0, '#4aa3e0'); g.addColorStop(0.6, '#8fcdf2'); g.addColorStop(1, '#d6f0fb');
   ctx.fillStyle = g; ctx.fillRect(0, VIEW_Y, W, Math.max(1, horizon - VIEW_Y + 4));
   // mặt trời: nhỏ, góc trên bên phải, viền đậm
-  const sx = W - (LANDSCAPE ? 380 : 330), sy = VIEW_Y + (LANDSCAPE ? 130 : 330), r = 62;
+  // mặt trời to, nằm giữa khoảng trời (không chạm thanh điểm bên trái và nút bên phải)
+  const r = LANDSCAPE ? 95 : 120, sx = LANDSCAPE ? W * 0.62 : W * 0.66, sy = LANDSCAPE ? VIEW_Y + 200 : clamp(horizon - 900, VIEW_Y + 420, horizon - 640);
   const glow = ctx.createRadialGradient(sx, sy, r * 0.6, sx, sy, r * 2.6); glow.addColorStop(0, 'rgba(255,240,170,.55)'); glow.addColorStop(1, 'rgba(255,240,170,0)');
   ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(sx, sy, r * 2.6, 0, 7); ctx.fill();
   ctx.save(); ctx.translate(sx, sy); ctx.rotate(timeAcc * 0.15); ctx.fillStyle = '#ffd43b'; ctx.strokeStyle = '#c77d00'; ctx.lineWidth = 5; ctx.lineJoin = 'round';
-  for (let i = 0; i < 10; i++) { ctx.rotate(Math.PI / 5); ctx.beginPath(); ctx.moveTo(-11, -r - 8); ctx.lineTo(0, -r - 34); ctx.lineTo(11, -r - 8); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  for (let i = 0; i < 10; i++) { ctx.rotate(Math.PI / 5); ctx.beginPath(); ctx.moveTo(-r * 0.17, -r - 8); ctx.lineTo(0, -r - r * 0.48); ctx.lineTo(r * 0.17, -r - 8); ctx.closePath(); ctx.fill(); ctx.stroke(); }
   ctx.restore();
   ctx.fillStyle = '#ffe066'; ctx.strokeStyle = '#c77d00'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(sx, sy, r, 0, 7); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(sx - 20, sy - 22, 18, 11, -0.5, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(sx - r * 0.33, sy - r * 0.36, r * 0.3, r * 0.18, -0.5, 0, 7); ctx.fill();
   // mây hoạt hình trôi chậm
   for (let i = 0; i < 5; i++) {
     const span = W + 700, x = (((i * 470 - cam * Z * 0.05 - timeAcc * 12) % span) + span) % span - 350;
-    cloudCartoon(x, VIEW_Y + 140 + (i % 3) * 95, 0.8 + (i % 2) * 0.45);
+    // mây thấp: dải mây lơ lửng ngay trên núi (3 đám), thêm 2 đám nhỏ ở lưng chừng trời
+    const low = i < 3, cy = LANDSCAPE ? VIEW_Y + 150 + (i % 3) * 60 : low ? horizon - 540 + i * 75 : horizon - 820 - (i - 3) * 150;
+    cloudCartoon(x, Math.max(VIEW_Y + 300, cy), low ? 0.95 + (i % 2) * 0.35 : 0.65);
   }
 }
 const CLOUD_PUFFS = [[-70, 10, 38], [-30, -14, 50], [22, -26, 58], [70, -4, 44], [104, 14, 30], [10, 18, 46]];
@@ -2189,8 +2194,16 @@ function showScreen(id) { for (const s of document.querySelectorAll('.screen')) 
 //  SƠ ĐỒ CHẶNG — con đường uốn lượn, mỗi chặng một nút tròn (kiểu bản đồ thử thách)
 //  Ảnh nền riêng từng chương: assets/map_ch<n>.webp (prompt trong tài liệu cốt truyện). Chưa có ảnh thì dùng nền màu.
 // =====================================================================
-const MAP_X = [0.7, 0.33, 0.64, 0.3, 0.66, 0.36, 0.68, 0.32, 0.62, 0.5, 0.5];
-const MAP_BG = { 1: 'linear-gradient(to top,#9ccc65 0%,#c5e1a5 28%,#f3e1b0 45%,#ffe8c2 62%,#cfe3ef 80%,#b7d3e6 100%)' };
+// Bảng màu pastel cho 16 chương (màu nút, màu viền dưới) — kiểu Duolingo
+const CH_PAL = [null,
+  ['#7fd8a4', '#4fb57a'], ['#ffe07a', '#e3b93c'], ['#a99bf0', '#7e6cd6'], ['#f7b59b', '#dc8e70'], ['#f6be7b', '#d99a4c'], ['#b5e27a', '#8cc152'],
+  ['#6fd6c6', '#42b3a2'], ['#f7a8c4', '#db7ea0'], ['#ff9e8a', '#e07560'], ['#7fd3e8', '#4fb1cc'], ['#9ed39a', '#74b06f'], ['#e8b98f', '#c9946a'],
+  ['#ffc75f', '#e09e2e'], ['#9db4f2', '#7189d4'], ['#8ec8f5', '#5ea3db'], ['#cfe07a', '#a8bd4e']];
+// đường đi lượn nhẹ như Duolingo: giữa → phải → giữa → trái …
+const MAP_OFF = [0, 0.15, 0.22, 0.15, 0, -0.15, -0.22, -0.15];
+// trang trí: chỉ đặt ở phía trống, cạnh các nút lệch xa nhất (không chồng lên nút, nhãn)
+// ảnh sticker riêng: assets/map_ch<n>_<k>.webp (prompt trong tài liệu); chưa có thì dùng ảnh sẵn trong game
+const MAP_DECO = { 1: ['strawhouse_0', 'buffalo_0', 'dinh_0', 'dog_0', 'banyan_0', 'buffmom_0'] };
 const CH_TEASER = {
   2: 'Xe đạp cà tàng, một lồng gà một lồng vịt. Ổ gà làm sổng lồng, phải nhặt lại từng con.',
   3: 'Băng Câu Liêm bắt mất chó Vàng. Hai anh em chạy xe máy trong đêm đi "trộm" lại.',
@@ -2208,56 +2221,60 @@ const CH_TEASER = {
   15: 'Kéo lưới cùng ngư dân Cửa Lò, canh nhịp sóng.',
   16: 'Trận cuối trên cánh đồng Thái Bình: máy gặt đấu máy gặt.',
 };
-// trang trí 2 bên đường cho Chương 1 (ảnh có sẵn trong game): [ảnh, chiều cao theo % bề ngang]
-const MAP_DECO1 = [
-  ['strawhouse_0', 0.34], ['ob_straw_0', 0.16], ['goose_0', 0.12], ['guava_0', 0.3], ['buffalo_0', 0.2], ['t_cau_1', 0.34],
-  ['house_0', 0.24], ['hen_0', 0.1], ['well_0', 0.2], ['dinh_0', 0.26], ['dog_0', 0.12], ['t_phuong_0', 0.32],
-  ['banyan_0', 0.34], ['boulder_0', 0.14], ['monkey_0', 0.14], ['chua_0', 0.28], ['buffmom_0', 0.18], ['house2_0', 0.24]];
+const ICO = {
+  star: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.6l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17l-5.7 3.1 1.2-6.4L2.8 9.3l6.4-.8z"/></svg>',
+  lock: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 10V7.5a5 5 0 0110 0V10h1.2c.7 0 1.3.6 1.3 1.3v8.4c0 .7-.6 1.3-1.3 1.3H5.8c-.7 0-1.3-.6-1.3-1.3v-8.4c0-.7.6-1.3 1.3-1.3zm2.6 0h4.8V7.5a2.4 2.4 0 00-4.8 0z"/></svg>',
+  boss: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 5c1.5 3 3.5 4 6 4h6c2.5 0 4.5-1 6-4 .4 3.5-.8 6.3-3.6 7.6V17a3 3 0 01-3 3h-4.8a3 3 0 01-3-3v-4.4C3.8 11.3 2.6 8.5 3 5zm6.2 9.2a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4zm5.6 0a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4z"/></svg>',
+  chest: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 9a5 5 0 015-5h6a5 5 0 015 5v1H4zm0 2.5h16V19a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 19zm6.5 1.5v3h3v-3z"/></svg>',
+};
 let mapCh = 1;
 function totalStars() { let t = 0; for (let i = 1; i <= LEVELS; i++) t += SAVE.levels[i] || 0; return t; }
 function renderMap(ch) {
   if (ch) mapCh = ch;
-  const C = CHAPTERS[mapCh - 1], open = !!C.open, stages = open ? C.stages : Array.from({ length: 10 }, (_, i) => ({ name: '', boss: i === 9 ? 0 : undefined }));
+  const C = CHAPTERS[mapCh - 1], open = !!C.open, [pc, pl] = CH_PAL[mapCh];
+  const stages = open ? C.stages : Array.from({ length: 10 }, (_, i) => ({ name: '', boss: i === 9 ? 0 : undefined }));
   $('mapTitle').textContent = `Chương ${C.n}: ${C.name}`;
-  $('mapStars').textContent = open ? `★ ${totalStars()}/${LEVELS * 3}` : '';
-  $('mapChips').innerHTML = CHAPTERS.map(c => `<button data-ch="${c.n}" class="${c.n === mapCh ? 'on' : ''} ${c.open ? '' : 'lock'}">${c.open ? '' : '🔒 '}${c.n} ${c.emo}</button>`).join('');
-  const scroll = $('mapScroll'), inner = $('mapInner');
-  const Wm = Math.round(Math.min(scroll.clientWidth || innerWidth, (scroll.clientHeight || innerHeight) * 0.78, 640)), nd = Math.round(clamp(Wm * 0.2, 72, 118)), gap = Math.round(Wm * 0.205);
-  const N = stages.length, Hm = Math.round(gap * (N + 1) + Wm * 0.42);
+  $('mapStars').textContent = open ? `★ ${totalStars()}/${LEVELS * 3}` : ''; $('mapStars').style.visibility = open ? 'visible' : 'hidden';
+  $('mapChips').innerHTML = CHAPTERS.map(c => `<button data-ch="${c.n}" class="${c.n === mapCh ? 'on' : ''} ${c.open ? '' : 'lock'}" style="--c:${CH_PAL[c.n][0]};--l:${CH_PAL[c.n][1]}">${c.open ? '' : '🔒 '}${c.n} ${c.emo}</button>`).join('');
+  const scroll = $('mapScroll'), inner = $('mapInner'), head = document.querySelector('#levels .maphead');
+  head.style.background = pc; head.style.color = '#fff';
+  const Wm = Math.round(Math.min(scroll.clientWidth || innerWidth, 560)), nd = Math.round(clamp(Wm * 0.2, 70, 104)), gap = Math.round(nd * 2.05);
+  const N = stages.length, Hm = Math.round(gap * N + nd * 3.2);
   inner.style.width = Wm + 'px'; inner.style.height = Hm + 'px';
-  const fallback = MAP_BG[mapCh] || `linear-gradient(to top, ${C.color}88, ${C.color}33 55%, #fff6e0)`;
-  inner.style.backgroundImage = `url(${ASSET_BASE}map_ch${mapCh}.webp), ${fallback}`;
-  const pts = []; const y0 = Hm - Wm * 0.2;
-  pts.push([Wm * 0.5, Hm + 10]);
-  for (let i = 0; i <= N; i++) pts.push([Wm * MAP_X[i % MAP_X.length], y0 - i * gap]);
-  pts.push([Wm * 0.5, y0 - (N + 1) * gap + gap * 0.3]);
-  // đường cong mượt (Catmull-Rom → Bézier)
-  let d = `M${pts[0][0]},${pts[0][1]}`;
-  for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
-    d += ` C${p1[0] + (p2[0] - p0[0]) / 6},${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6},${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]},${p2[1]}`; }
-  const rw = Wm * 0.15;
-  let html = `<svg width="${Wm}" height="${Hm}" viewBox="0 0 ${Wm} ${Hm}"><path d="${d}" fill="none" stroke="#c99a5b" stroke-width="${rw + 10}" stroke-linecap="round" opacity=".55"/><path d="${d}" fill="none" stroke="#f2cf92" stroke-width="${rw}" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#f9e3b5" stroke-width="${rw * 0.45}" stroke-linecap="round" stroke-dasharray="${rw * 0.6} ${rw * 0.9}" opacity=".8"/></svg>`;
-  // trang trí
-  if (open) MAP_DECO1.forEach(([nm, hk], j) => { const i = Math.floor(j / 2) + (j % 2 ? 0.5 : 0); const [nx] = pts[1 + Math.min(N, Math.floor(i))];
-    const side = nx > Wm * 0.5 ? 0.2 : 0.8, x = Wm * (side + (j % 2 ? (side < 0.5 ? -0.02 : 0.03) : 0)), y = y0 - i * gap + gap * 0.42;
-    if (y > 40 && y < Hm) html += `<img class="mdeco" src="${ASSET_BASE}${nm}${EXT}" alt="" style="left:${x}px;top:${y}px;height:${Math.round(Wm * hk)}px">`; });
+  scroll.style.background = `linear-gradient(${pc}22, ${pc}22), #fff`;
+  inner.style.backgroundImage = `url(${ASSET_BASE}map_ch${mapCh}.webp)`;
+  const y0 = Hm - nd * 1.3, P = [];
+  for (let i = 0; i <= N; i++) P.push([Wm * (0.5 + MAP_OFF[i % MAP_OFF.length]), y0 - i * gap]);
+  let html = '';
+  // đường chấm nhạt nối các nút
+  let d = `M${P[0][0]},${P[0][1]}`; for (let i = 1; i < P.length; i++) { const [ax, ay] = P[i - 1], [bx, by] = P[i]; d += ` C${ax},${ay - gap * 0.5} ${bx},${by + gap * 0.5} ${bx},${by}`; }
+  html += `<svg width="${Wm}" height="${Hm}"><path d="${d}" fill="none" stroke="${pc}" stroke-opacity=".28" stroke-width="${nd * 0.16}" stroke-linecap="round" stroke-dasharray="1 ${nd * 0.36}"/></svg>`;
+  // trang trí: chỉ ở các nút lệch xa nhất (i = 2, 6, 10…) phía đối diện, và ở nút giữa (i = 4, 8) một bên
+  const decos = open ? (MAP_DECO[mapCh] || []) : []; let k = 0; const curI = open ? clamp(SAVE.unlocked, 1, LEVELS) - 1 : -9;
+  for (let i = 1; i <= N && k < decos.length; i++) { if (Math.abs(i - curI) <= 1) continue; /* chừa chỗ cho bộ đôi vác heo */ const off = MAP_OFF[i % MAP_OFF.length]; if (Math.abs(off) < 0.2 && off !== 0) continue; if (off === 0 && i % 4 !== 0) continue;
+    const side = off > 0 ? -1 : off < 0 ? 1 : (k % 2 ? 1 : -1), x = Wm * (0.5 + side * 0.31), y = P[i][1] + nd * 0.55, hh = Math.round(Wm * (off === 0 ? 0.2 : 0.26));
+    const fb = `${ASSET_BASE}${decos[k]}${EXT}`;
+    html += `<img class="mdeco" src="${ASSET_BASE}map_ch${mapCh}_${k}.webp" onerror="this.onerror=null;this.src='${fb}'" alt="" style="left:${x}px;top:${y}px;max-height:${hh}px;max-width:${Math.round(Wm * 0.3)}px">`; k++; }
   const unlocked = open ? clamp(SAVE.unlocked, 1, LEVELS) : 0;
   stages.forEach((st, i) => {
-    const n = i + 1, [x, y] = pts[1 + i], stars = open ? (SAVE.levels[n] || 0) : 0, locked = !open || n > unlocked, cur = open && n === unlocked && !(SAVE.levels[n] > 0 && n === LEVELS);
-    const cls = ['mnode', st.boss != null ? 'boss' : '', locked ? 'lock' : stars ? 'done' : '', cur ? 'cur' : ''].join(' ');
-    html += `<button class="${cls}" ${locked ? 'disabled' : `data-level="${n}"`} style="left:${x}px;top:${y}px;width:${nd}px;height:${Math.round(nd * 0.92)}px"><i></i><b style="font-size:${Math.round(nd * 0.4)}px">${locked && open ? '🔒' : st.boss != null ? '🐃' : n}</b>${stars ? `<span class="st">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>` : ''}</button>`;
-    if (open) { const right = x < Wm * 0.5; html += `<span class="mlabel ${locked ? 'lk' : ''} ${cur ? 'curl' : ''}" style="${right ? 'left' : 'right'}:${right ? x + nd * 0.62 : Wm - x + nd * 0.62}px;top:${y - nd * 0.1}px">${cur ? ((SAVE.levels[n] || 0) ? '↻ ' : '▶ ') : ''}${n}. ${esc(st.name)}</span>`; }
-    if (cur) { const out = x > Wm * 0.5 ? 1 : -1; // bộ đôi vác heo đứng phía ngoài nút, nhãn ở phía trong
-      html += `<img class="mhero" src="${ASSET_BASE}d_run_0${EXT}" alt="" style="left:${clamp(x + out * nd * 0.98, nd * 0.75, Wm - nd * 0.75)}px;top:${y + nd * 0.32}px;height:${Math.round(nd * 0.9)}px;${out < 0 ? 'transform:translate(-50%,-100%) scaleX(-1)' : ''}">`; }
+    const n = i + 1, [x, y] = P[i], stars = open ? (SAVE.levels[n] || 0) : 0, locked = !open || n > unlocked, cur = open && n === unlocked;
+    const boss = st.boss != null, sz = boss ? Math.round(nd * 1.12) : nd;
+    const cls = ['mnode', boss ? 'boss' : '', locked ? 'lock' : (stars && !cur) ? 'done' : '', cur ? 'cur' : ''].join(' ');
+    html += `<button class="${cls}" ${locked ? 'disabled' : `data-level="${n}"`} style="left:${x}px;top:${y}px;width:${sz}px;height:${Math.round(sz * 0.9)}px;--c:${pc};--l:${pl}">${cur ? '<span class="ring"></span>' : ''}<b>${locked ? ICO.lock : boss ? ICO.boss : ICO.star}</b></button>`;
+    if (open) html += `<span class="mname ${locked ? 'lk' : ''}" style="left:${clamp(x, Wm * 0.26, Wm * 0.74)}px;top:${y + sz * 0.5 + 8}px">${stars ? `<em>${'★'.repeat(stars)}<s>${'★'.repeat(3 - stars)}</s></em>` : ''}${n}. ${esc(st.name)}</span>`;
+    if (cur) {
+      html += `<span class="mbubble" style="left:${x}px;top:${y - sz * 0.62}px;color:${pl};border-color:${pc}">${stars ? 'CHƠI LẠI' : n === 1 ? 'BẮT ĐẦU' : 'TIẾP TỤC'}</span>`;
+      const out = x >= Wm * 0.5 ? -1 : 1; // bộ đôi vác heo đứng ở phía trống
+      html += `<img class="mhero" src="${ASSET_BASE}d_run_0${EXT}" alt="" style="left:${x + out * sz * 1.25}px;top:${y + sz * 0.42}px;height:${Math.round(sz * 0.95)}px;${out < 0 ? '' : 'transform:translate(-50%,-100%) scaleX(-1)'}">`;
+    }
   });
-  const [gx, gy] = pts[N + 1];
-  html += `<div class="mnode goal" style="left:${gx}px;top:${gy}px;width:${Math.round(nd * 1.2)}px;height:${Math.round(nd * 1.1)}px;pointer-events:none"><i></i><b style="font-size:${Math.round(nd * 0.42)}px">${open ? '🏁' : C.emo}</b></div>`;
-  if (open) html += `<span class="mlabel" style="left:${gx}px;transform:translate(-50%,0);top:${gy + nd * 0.55}px">${C.n === 1 ? 'Chợ phiên huyện' : 'Đích'}</span>`;
-  if (!open) html = `<div class="mlock"><div style="font-size:44px">${C.emo}</div><h3>Chương ${C.n}: ${esc(C.name)}</h3><p>${esc(CH_TEASER[C.n] || '')}</p><span class="soon">🔒 Sắp ra mắt</span></div>` + html;
+  const [gx, gy] = P[N];
+  html += `<div class="mnode goal ${open && SAVE.levels[N] ? 'done' : ''}" style="left:${gx}px;top:${gy}px;width:${Math.round(nd * 1.1)}px;height:${Math.round(nd)}px;--c:${pc};--l:${pl};pointer-events:none"><b>${ICO.chest}</b></div>`;
+  html += `<span class="mname" style="left:${gx}px;top:${gy + nd * 0.6}px">${open ? (C.n === 1 ? '🏁 Chợ phiên huyện' : '🏁 Đích') : ''}</span>`;
+  if (!open) html = `<div class="mlock" style="border-top:8px solid ${pc}"><div style="font-size:44px">${C.emo}</div><h3>Chương ${C.n}: ${esc(C.name)}</h3><p>${esc(CH_TEASER[C.n] || '')}</p><span class="soon" style="background:${pc}">🔒 Sắp ra mắt</span></div>` + html;
   inner.innerHTML = html;
-  // cuộn tới chặng đang chơi
-  const target = open ? pts[1 + unlocked - 1][1] : Hm - (scroll.clientHeight || 600);
-  requestAnimationFrame(() => { scroll.scrollTop = Math.max(0, target - (scroll.clientHeight || 600) * 0.6); });
+  const target = open ? P[unlocked - 1][1] : Hm;
+  requestAnimationFrame(() => { scroll.scrollTop = Math.max(0, target - (scroll.clientHeight || 600) * 0.55); });
 }
 function renderLevels() { renderMap(); }
 
