@@ -50,6 +50,7 @@
   .sheet[hidden]{display:none}
   .sheet .card{display:flex;flex-direction:column;align-items:center;gap:12px;width:min(92vw,420px)}
   .sheet video{width:100%;max-height:55vh;border-radius:14px;background:#000;border:3px solid #ffd43b}
+  .visits{margin:0;font-size:13px;white-space:nowrap;font-weight:800;color:#ffe066;background:rgba(255,255,255,.08);border-radius:999px;padding:6px 14px}
   .stars{font-size:40px;letter-spacing:6px}
   .tabs{display:flex;gap:8px}.tabs button{min-height:42px;padding:0 18px;background:#2a1850}.tabs button.on{background:#ffcf3a;color:#3a1600}
   ol{list-style:none;margin:0;padding:0;width:min(90vw,380px);max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
@@ -67,6 +68,7 @@
     <img class="logo" src="assets/logo_0.webp" alt="">
     <h1>GAME TẠO STRESS</h1>
     <p class="sub">Đường làng toàn bẫy. Chết là chuyện thường!</p>
+    <p id="visitInfo" class="visits" hidden></p>
     <input id="nameInput" maxlength="20" placeholder="Nhập tên để lên bảng xếp hạng" autocomplete="nickname">
     <button class="big go" data-act="endless">▶ Chơi vô tận</button>
     <button class="big" data-act="levels">🗺️ Phiêu lưu 12 màn</button>
@@ -1993,6 +1995,19 @@ drawHUD = function () {
   if (GAME.mode === 'adventure') { const k = clamp(run.dist / GAME.goal, 0, 1); rr(24, y + 116, 560, 20, 10); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fill(); rr(24, y + 116, 560 * k, 20, 10); ctx.fillStyle = '#69db7c'; ctx.fill(); }
   for (let i = 0; i < shields; i++) spr('icon', 0, 640 + i * 76, y + 40, 66);
 };
+// ---- đếm lượt vào và người đang chơi (Supabase) ----
+const nf = n => Number(n || 0).toLocaleString('vi-VN');
+async function visit(isNew) {
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/rpc/stress_visit', { method: 'POST', headers: sbHead, body: JSON.stringify({ p_device: SAVE.device, p_new: isNew }) });
+    if (!r.ok) return; const v = await r.json(), el = $('visitInfo');
+    el.textContent = `👀 ${nf(v.total)} lượt vào · 👥 ${nf(v.players)} người · 🟢 ${nf(v.online)} đang chơi`; el.hidden = false;
+  } catch {}
+}
+visit(true);
+setInterval(() => { if (!document.hidden) visit(false); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) visit(false); });
+
 // ---- quay video màn hình chơi (lưu hay không tuỳ bạn) ----
 const REC = { mr: null, chunks: [], t0: 0, url: null, blob: null, timer: 0 };
 function recMime() { for (const m of ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']) if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m; return ''; }
