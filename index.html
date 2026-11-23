@@ -43,6 +43,13 @@
   #levelGrid button:disabled{background:#2a2238;box-shadow:none;color:#6b5e85}
   .throw{pointer-events:auto;position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom) + 28px);min-width:118px;height:118px;border-radius:50%;font-size:19px;background:radial-gradient(circle at 40% 35%,#ffe066,#f08c00);color:#3a1600;border:4px solid #fff;box-shadow:0 6px 0 #8a4b00;touch-action:none}
   .throw:active{transform:translateY(4px);box-shadow:none}
+  .rec{pointer-events:auto;position:absolute;top:calc(env(safe-area-inset-top) + 70px);right:12px;min-width:48px;height:48px;border-radius:24px;background:rgba(20,6,40,.6);font-size:20px;color:#ff6b6b;border:2px solid rgba(255,255,255,.35);z-index:5;padding:0 10px}
+  .rec.on{background:#e03131;color:#fff;font-size:16px;animation:recpulse 1.2s infinite}
+  @keyframes recpulse{50%{box-shadow:0 0 0 6px rgba(224,49,49,.35)}}
+  .sheet{pointer-events:auto;position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;background:rgba(8,3,16,.86);padding:20px}
+  .sheet[hidden]{display:none}
+  .sheet .card{display:flex;flex-direction:column;align-items:center;gap:12px;width:min(92vw,420px)}
+  .sheet video{width:100%;max-height:55vh;border-radius:14px;background:#000;border:3px solid #ffd43b}
   .stars{font-size:40px;letter-spacing:6px}
   .tabs{display:flex;gap:8px}.tabs button{min-height:42px;padding:0 18px;background:#2a1850}.tabs button.on{background:#ffcf3a;color:#3a1600}
   ol{list-style:none;margin:0;padding:0;width:min(90vw,380px);max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
@@ -111,6 +118,16 @@
     <button class="big" data-act="restart">↻ Chơi lại</button>
     <button class="big" data-act="menu">☰ Menu</button>
   </section>
+  <button id="recBtn" class="rec" aria-label="Quay video màn hình">⏺</button>
+  <div id="recSheet" class="sheet" hidden>
+    <div class="card">
+      <h2>🎬 Video vừa quay</h2>
+      <video id="recVideo" playsinline controls muted></video>
+      <p id="recInfo" class="sub"></p>
+      <button class="big go" id="recSave">💾 Lưu video</button>
+      <div class="row"><button class="small" id="recAgain">⏺ Quay tiếp</button><button class="small" id="recDrop">🗑 Bỏ, không lưu</button></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -185,7 +202,7 @@ const GIFT_EMOJI = { 'Rose': '🌹', 'TikTok': '🎵', 'Finger Heart': '🫰', '
 
 // ---------------- Âm thanh 8-bit ----------------
 let AC = null;
-function audio() { if (!AC) try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch {} if (AC && AC.state !== 'running' && AC.state !== 'closed') AC.resume().catch(() => {}); return AC; }
+function audio() { if (!AC) try { AC = new (window.AudioContext || window.webkitAudioContext)(); AC.out = AC.createGain(); AC.out.connect(AC.destination); if (AC.createMediaStreamDestination) { AC.rec = AC.createMediaStreamDestination(); AC.out.connect(AC.rec); } } catch {} if (AC && AC.state !== 'running' && AC.state !== 'closed') AC.resume().catch(() => {}); return AC; }
 // iPhone/iPad: chỉ mở khoá âm thanh trong touchend/click, phát 1 mẫu im lặng để "đánh thức" loa
 function unlockAudio() { const a = audio(); if (!a) return; try { const b = a.createBuffer(1, 1, 22050), src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); src.start(0); } catch {} }
 ['touchend', 'click', 'keydown'].forEach(ev => addEventListener(ev, unlockAudio, { capture: true, passive: true }));
@@ -196,7 +213,7 @@ function beep(freq, dur, type = 'square', vol = 0.08, slide = 0) {
   o.type = type; o.frequency.setValueAtTime(freq, a.currentTime);
   if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), a.currentTime + dur);
   g.gain.setValueAtTime(vol * (cfg.volume ?? 1), a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur);
-  o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + dur);
+  o.connect(g).connect(a.out || a.destination); o.start(); o.stop(a.currentTime + dur);
 }
 const SFX = {
   jump: () => beep(380, 0.15, 'square', 0.05, 500),
@@ -241,7 +258,7 @@ function hit(a, out, t, dur, vol, hp) {
 }
 function musicTick() {
   const a = AC; if (!a || a.state !== 'running' || PREVIEW || cfg.musicEnabled === false) { if (MUS.gain) MUS.gain.gain.value = 0; return; }
-  if (!MUS.gain) { MUS.gain = a.createGain(); MUS.gain.connect(a.destination); MUS.next = a.currentTime + 0.15; }
+  if (!MUS.gain) { MUS.gain = a.createGain(); MUS.gain.connect(a.out || a.destination); MUS.next = a.currentTime + 0.15; }
   const want = (arena && arena.active && boss) ? 'boss' : 'play';
   if (want !== MUS.song) { MUS.song = want; MUS.step = 0; }
   const target = ((state === 'play' && !GAME.paused) || state === 'menu') ? (cfg.musicVolume ?? 0.35) * (speech.playing ? 0.35 : 1) : 0.0001;
@@ -259,7 +276,7 @@ function musicTick() {
   }
 }
 // ---------------- Âm thanh hành động ----------------
-function sfx(fn) { const a = audio(); if (!a || a.state !== 'running' || PREVIEW) return; const out = a.destination, t = a.currentTime, v = cfg.volume ?? 0.9; fn(a, out, t, v); }
+function sfx(fn) { const a = audio(); if (!a || a.state !== 'running' || PREVIEW) return; const out = a.out || a.destination, t = a.currentTime, v = cfg.volume ?? 0.9; fn(a, out, t, v); }
 Object.assign(SFX, {
   start: () => sfx((a, o, t, v) => [72, 76, 79, 84].forEach((n, i) => tone(a, o, NOTE(n), t + i * 0.09, 0.16, 'square', 0.09 * v))),
   gameover: () => sfx((a, o, t, v) => [79, 78, 77, 76, 72].forEach((n, i) => tone(a, o, NOTE(n), t + 0.25 + i * 0.22, i === 4 ? 0.6 : 0.2, 'square', 0.1 * v))),
@@ -1976,6 +1993,44 @@ drawHUD = function () {
   if (GAME.mode === 'adventure') { const k = clamp(run.dist / GAME.goal, 0, 1); rr(24, y + 116, 560, 20, 10); ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fill(); rr(24, y + 116, 560 * k, 20, 10); ctx.fillStyle = '#69db7c'; ctx.fill(); }
   for (let i = 0; i < shields; i++) spr('icon', 0, 640 + i * 76, y + 40, 66);
 };
+// ---- quay video màn hình chơi (lưu hay không tuỳ bạn) ----
+const REC = { mr: null, chunks: [], t0: 0, url: null, blob: null, timer: 0 };
+function recMime() { for (const m of ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']) if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m; return ''; }
+function recLabel() { const b = $('recBtn'); if (REC.mr) { const t = Math.floor((performance.now() - REC.t0) / 1000); b.textContent = `⏹ ${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; b.classList.add('on'); if (t >= 180) recStop(); } else { b.textContent = '⏺'; b.classList.remove('on'); } }
+function recStart() {
+  if (!window.MediaRecorder || !cv.captureStream) { banner('📵 Máy này chưa hỗ trợ quay màn hình', '#ffa8a8', 2.2); return; }
+  const a = audio(), tracks = [...cv.captureStream(30).getVideoTracks()];
+  if (a && a.rec) tracks.push(...a.rec.stream.getAudioTracks());
+  const mime = recMime();
+  try { REC.mr = new MediaRecorder(new MediaStream(tracks), mime ? { mimeType: mime, videoBitsPerSecond: 4000000 } : undefined); }
+  catch { REC.mr = null; banner('📵 Không bật được quay màn hình', '#ffa8a8', 2.2); return; }
+  REC.chunks = []; REC.mr.ondataavailable = e => { if (e.data && e.data.size) REC.chunks.push(e.data); };
+  REC.mr.onstop = recDone; REC.mr.start(1000); REC.t0 = performance.now();
+  clearInterval(REC.timer); REC.timer = setInterval(recLabel, 500); recLabel(); banner('🔴 ĐANG QUAY VIDEO', '#ff8787', 1.2);
+}
+function recStop() { clearInterval(REC.timer); if (REC.mr && REC.mr.state !== 'inactive') REC.mr.stop(); }
+function recDone() {
+  const type = (REC.mr && REC.mr.mimeType) || (REC.chunks[0] && REC.chunks[0].type) || 'video/webm', secs = Math.round((performance.now() - REC.t0) / 1000);
+  REC.mr = null; recLabel();
+  if (!REC.chunks.length) { banner('Video trống, thử quay lại nhé', '#ffa8a8', 1.8); return; }
+  REC.blob = new Blob(REC.chunks, { type }); if (REC.url) URL.revokeObjectURL(REC.url); REC.url = URL.createObjectURL(REC.blob);
+  $('recVideo').src = REC.url; $('recInfo').textContent = `Dài ${secs} giây · ${(REC.blob.size / 1048576).toFixed(1)} MB · ${type.includes('mp4') ? 'MP4' : 'WebM'}`;
+  if (state === 'play') pauseGame(); $('recSheet').hidden = false;
+}
+function recClose() { $('recSheet').hidden = true; try { $('recVideo').pause(); } catch {} }
+async function recSave() {
+  if (!REC.blob) return;
+  const ext = REC.blob.type.includes('mp4') ? 'mp4' : 'webm', name = `game-tao-stress-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${ext}`;
+  const file = new File([REC.blob], name, { type: REC.blob.type });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Game Tạo Stress' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = REC.url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+$('recBtn').addEventListener('pointerdown', e => e.stopPropagation());
+$('recBtn').addEventListener('click', e => { e.stopPropagation(); audio(); REC.mr ? recStop() : recStart(); });
+$('recSave').addEventListener('click', e => { e.stopPropagation(); recSave(); });
+$('recDrop').addEventListener('click', e => { e.stopPropagation(); REC.blob = null; recClose(); });
+$('recAgain').addEventListener('click', e => { e.stopPropagation(); recClose(); recStart(); if (GAME.paused) resumeGame(); });
+
 // ---- vòng lặp ----
 function playFrame(now) {
   if (!assetsReady()) { lastT = now; drawLoading(); requestAnimationFrame(playFrame); return; }
