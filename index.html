@@ -59,7 +59,9 @@
   .chips button.on{background:var(--c);color:#fff;border-color:var(--l);box-shadow:0 3px 0 var(--l)}
   .chips button.lock{color:#a08b66}
   #mapScroll{flex:1 1 auto;min-height:0;width:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:flex;justify-content:center;overscroll-behavior:contain;touch-action:pan-y}
-  #mapInner{position:relative;flex:0 0 auto;background-size:100% auto;background-repeat:repeat-y;background-position:center top}
+  #mapInner{position:relative;flex:0 0 auto;background-size:cover;background-repeat:no-repeat;background-position:center}
+  #mapInner.hasbg .mname{background:rgba(255,255,255,.88);padding:3px 9px;border-radius:10px;text-shadow:none;box-shadow:0 2px 0 rgba(0,0,0,.12)}
+  #mapInner.hasbg .mnode b{box-shadow:0 9px 0 var(--l),0 12px 14px rgba(0,0,0,.25)}
   #mapInner > svg{position:absolute;left:0;top:0;pointer-events:none}
   .mnode{position:absolute;transform:translate(-50%,-50%);padding:0;background:none;border-radius:50%;touch-action:manipulation;box-shadow:none}
   .mnode b{position:absolute;inset:0 0 10% 0;border-radius:50%;background:var(--c);box-shadow:0 9px 0 var(--l);display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden}
@@ -1759,7 +1761,7 @@ function drawTile(t, sx, sy, b, tx, ty) {
   const ti = TILE_IMG[t];
   if (t === BRIDGE || t === BLK) return;
   if (ti) { const im = img(ti[0], ti[1]); if (im) { ctx.drawImage(im, sx, sy, T + 1, T + 1); return; } }
-  if (t === SPIKE && spr('stakes', 3, sx + T / 2, sy + T + 28, 80)) return; // chân bụi gai nằm giữa mặt đường như ụ rơm
+  if (t === SPIKE && spr('stakes', 3, sx + T / 2, sy + T + 20, 80)) return; // chân bụi gai nằm giữa mặt đường như ụ rơm
   const B = BIOMES[b];
   switch (t) {
     case GRASS: case FAKE_G:
@@ -1866,7 +1868,7 @@ function drawBG_world() {}
 function drawEnt(e) {
   if (drawOther(e)) return;
   switch (e.k) {
-    case 'pop': if (e.rise > 0 && !spr('stakes', Math.min(3, 1 + Math.floor(e.rise * 3)), e.x + T / 2, e.y + T + 28, 80)) drawSpike(e.x, e.y + T, T, T * 0.9 * e.rise); break;
+    case 'pop': if (e.rise > 0 && !spr('stakes', Math.min(3, 1 + Math.floor(e.rise * 3)), e.x + T / 2, e.y + T + 20, 80)) drawSpike(e.x, e.y + T, T, T * 0.9 * e.rise); break;
     case 'apple': if (spr('fruit', e.fruit ?? 1, e.x + 11, e.y + 24, e.fruit === 3 ? 28 : 20)) break; ctx.fillStyle = '#e03131'; ctx.beginPath(); ctx.arc(e.x + 17, e.y + 19, 16, 0, 7); ctx.fill(); ctx.fillStyle = '#ff8787'; ctx.fillRect(e.x + 8, e.y + 10, 6, 6); ctx.fillStyle = '#2b8a3e'; ctx.fillRect(e.x + 16, e.y - 2, 4, 8); ctx.fillRect(e.x + 20, e.y, 8, 4); break;
     case 'thwomp': if (e.item) { drawItem(e.item, e.x + e.w / 2, e.y + e.h / 2, 86, e.landed ? 0.25 : Math.sin(timeAcc * 9) * 0.25); break; } if (spr('boulder', e.on ? (e.landed ? 1 : 2) : 0, e.x + e.w / 2, e.y + e.h + 8, e.h + 20)) break; ctx.fillStyle = '#868e96'; ctx.fillRect(e.x, e.y, e.w, e.h); ctx.fillStyle = '#495057'; ctx.fillRect(e.x, e.y + e.h - 10, e.w, 10);
       ctx.fillStyle = '#fff'; ctx.fillRect(e.x + 22, e.y + 34, 22, 18); ctx.fillRect(e.x + 66, e.y + 34, 22, 18); ctx.fillStyle = '#000'; ctx.fillRect(e.x + 32, e.y + 40, 10, 10); ctx.fillRect(e.x + 70, e.y + 40, 10, 10);
@@ -2238,6 +2240,8 @@ const ICO = {
   chest: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 9a5 5 0 015-5h6a5 5 0 015 5v1H4zm0 2.5h16V19a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 19zm6.5 1.5v3h3v-3z"/></svg>',
 };
 let mapCh = 1;
+// ảnh nền sơ đồ: chương n dùng assets/map_ch<MAP_BG_OF[n]>.webp (15 ảnh; chương 16 dùng lại ảnh 1)
+const MAP_BG_OF = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 1];
 function totalStars() { let t = 0; for (let i = 1; i <= LEVELS; i++) t += SAVE.levels[i] || 0; return t; }
 function renderMap(ch) {
   if (ch) mapCh = ch;
@@ -2251,16 +2255,19 @@ function renderMap(ch) {
   const Wm = Math.round(Math.min(scroll.clientWidth || innerWidth, 560)), nd0 = clamp(Wm * 0.2, 70, 104), nd = Math.round(nd0 * 0.8), gap = Math.round(nd0 * 1.85); // nút chặng = 80%
   const N = stages.length, Hm = Math.round(gap * N + nd * 3.2);
   inner.style.width = Wm + 'px'; inner.style.height = Hm + 'px';
-  scroll.style.background = `linear-gradient(${pc}22, ${pc}22), #fff`;
-  inner.style.backgroundImage = `url(${ASSET_BASE}map_ch${mapCh}.webp)`;
+  if (!MAP_BG_OF[mapCh]) scroll.style.background = `linear-gradient(${pc}22, ${pc}22), #fff`;
+  const bgN = MAP_BG_OF[mapCh]; inner.style.backgroundImage = 'none';
+  // ảnh nền đứng yên, vừa khít khung nhìn; các nút chặng cuộn bên trên
+  if (bgN) { scroll.style.background = `#fff url(${ASSET_BASE}map_ch${bgN}.webp) center / cover no-repeat`; }
+  inner.classList.toggle('hasbg', !!bgN);
   const y0 = Hm - nd * 1.3, P = [];
   for (let i = 0; i <= N; i++) P.push([Wm * (0.5 + MAP_OFF[i % MAP_OFF.length]), y0 - i * gap]);
   let html = '';
-  // đường chấm nhạt nối các nút
+  if (!bgN) { // đường chấm nhạt nối các nút (chỉ khi chưa có ảnh nền)
   let d = `M${P[0][0]},${P[0][1]}`; for (let i = 1; i < P.length; i++) { const [ax, ay] = P[i - 1], [bx, by] = P[i]; d += ` C${ax},${ay - gap * 0.5} ${bx},${by + gap * 0.5} ${bx},${by}`; }
-  html += `<svg width="${Wm}" height="${Hm}"><path d="${d}" fill="none" stroke="${pc}" stroke-opacity=".28" stroke-width="${nd * 0.16}" stroke-linecap="round" stroke-dasharray="1 ${nd * 0.36}"/></svg>`;
+  html += `<svg width="${Wm}" height="${Hm}"><path d="${d}" fill="none" stroke="${pc}" stroke-opacity=".28" stroke-width="${nd * 0.16}" stroke-linecap="round" stroke-dasharray="1 ${nd * 0.36}"/></svg>`; }
   // trang trí: chỉ ở các nút lệch xa nhất (i = 2, 6, 10…) phía đối diện, và ở nút giữa (i = 4, 8) một bên
-  const decos = open ? (MAP_DECO[mapCh] || []) : []; let k = 0; const curI = open ? clamp(SAVE.unlocked, 1, LEVELS) - 1 : -9;
+  const decos = open && !bgN ? (MAP_DECO[mapCh] || []) : []; /* ảnh nền đã có cảnh vật */ let k = 0; const curI = open ? clamp(SAVE.unlocked, 1, LEVELS) - 1 : -9;
   for (let i = 1; i <= N && k < decos.length; i++) { if (Math.abs(i - curI) <= 1) continue; /* chừa chỗ cho bộ đôi vác heo */ const off = MAP_OFF[i % MAP_OFF.length]; if (Math.abs(off) < 0.2 && off !== 0) continue; if (off === 0 && i % 4 !== 0) continue;
     const side = off > 0 ? -1 : off < 0 ? 1 : (k % 2 ? 1 : -1), x = Wm * (0.5 + side * 0.31), y = P[i][1] + nd * 0.55, hh = Math.round(Wm * (off === 0 ? 0.2 : 0.26));
     const fb = `${ASSET_BASE}${decos[k]}${EXT}`;
@@ -2478,7 +2485,7 @@ function animalTick(dt) {
   if (run.nextA == null) run.nextA = 2.5;
   if (run.t < run.nextA) return;
   const early = run.t < 7;
-  run.nextA = run.t + (early ? rand(2.5, 3.5) : rand(4.5, 7));
+  run.nextA = run.t + (early ? rand(2.5, 3.5) : rand(3, 5));
   const f = findGroundAhead(9, 14); if (!f && !early) return;
   if (early) { if (f) addEnt(makeCritter(pick(EASY_ANIMALS), f.tx * T + 6, f.g * T, null)); return; }
   switch (pick(MEDIUM_WAVES)) {
