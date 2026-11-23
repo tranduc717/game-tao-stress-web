@@ -51,6 +51,14 @@
   .sheet .card{display:flex;flex-direction:column;align-items:center;gap:12px;width:min(92vw,420px)}
   .sheet video{width:100%;max-height:55vh;border-radius:14px;background:#000;border:3px solid #ffd43b}
   .visits{margin:0;font-size:13px;white-space:nowrap;font-weight:800;color:#ffe066;background:rgba(255,255,255,.08);border-radius:999px;padding:6px 14px}
+  @media (orientation: landscape) and (max-height: 560px){
+    .screen{gap:7px;padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 8px);justify-content:flex-start}
+    .screen > *:first-child{margin-top:auto}.screen > *:last-child{margin-bottom:auto}
+    .logo,.face{width:72px}h1{font-size:28px}h2{font-size:24px}.sub{font-size:13px}.hint{display:none}
+    .big{min-height:42px;font-size:16px;width:min(70vw,340px)}.small{min-height:38px}input{min-height:40px;width:min(70vw,340px)}
+    #levelGrid{grid-template-columns:repeat(6,1fr);width:min(80vw,520px)}#levelGrid button{aspect-ratio:auto;height:52px;font-size:18px}
+    ol{max-height:46vh}.stat{width:min(70vw,340px);padding:6px 14px}
+  }
   .stars{font-size:40px;letter-spacing:6px}
   .tabs{display:flex;gap:8px}.tabs button{min-height:42px;padding:0 18px;background:#2a1850}.tabs button.on{background:#ffcf3a;color:#3a1600}
   ol{list-style:none;margin:0;padding:0;width:min(90vw,380px);max-height:52vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
@@ -139,21 +147,39 @@
 //  Màn hình dọc 1080×1920 · ?hq=1 để vẽ 1620×2880 · ?demo=1 tự giả lập quà
 // =====================================================================
 const Q = new URLSearchParams(location.search);
-const HQ = Math.max(0.6, Math.min(1, (innerWidth * (devicePixelRatio || 1)) / 1080));
 const DEMO = false;
 const PREVIEW = false; // khung xem trước trong bảng điều khiển: im lặng, không báo số liệu
-const W = 1080, T = 60, ROWS = 18;
-const H = Math.round(Math.max(1500, Math.min(2400, W * innerHeight / Math.max(1, innerWidth)))); // khớp tỉ lệ màn hình điện thoại
-const HUD_H = 0, TICK_Y = 0, TICK_H = 0, VIEW_Y = 0, VIEW_H = H;
-const BOTTOM_Y = VIEW_Y + VIEW_H;
-const Z = 1.7, VW = W / Z, ROW0 = ROWS + 0.5 - VIEW_H / (T * Z); // toàn màn hình, mặt đất ở khoảng 3/4 chiều cao
+const T = 60, ROWS = 18, HUD_H = 0, TICK_Y = 0, TICK_H = 0, VIEW_Y = 0;
+// Bố cục theo hướng màn hình: dọc (điện thoại) hoặc ngang (xoay ngang, máy tính bảng, máy tính)
+let W, H, VIEW_H, BOTTOM_Y, Z, VW, ROW0, HQ, LANDSCAPE;
+function computeLayout() {
+  const iw = Math.max(1, innerWidth), ih = Math.max(1, innerHeight);
+  LANDSCAPE = iw > ih * 1.05;
+  if (LANDSCAPE) { H = 1080; W = Math.round(Math.max(1440, Math.min(2600, H * iw / ih))); Z = 1.5; }
+  else { W = 1080; H = Math.round(Math.max(1500, Math.min(2400, W * ih / iw))); Z = 1.7; }
+  VIEW_H = H; BOTTOM_Y = VIEW_Y + VIEW_H; VW = W / Z;
+  ROW0 = ROWS + 0.5 - VIEW_H / (T * Z);
+  HQ = Math.max(0.6, Math.min(1, (iw * (devicePixelRatio || 1)) / W));
+}
+computeLayout();
 let GAME = { mode: 'menu', level: 0, speed: 1, bossEvery: 300, goal: Infinity, biome: 0, trollT: 6, attempts: 0, paused: false, nextHat: 140 };
 const G = 2500, RUN = 300, JUMP_V = 1020;
 const GUN = false; // bản làng quê: không bắn súng, chỉ nhảy và đạp đầu
 const FONT = '"Be Vietnam Pro","Arial Black",Arial,sans-serif';
 
 const cv = document.getElementById('c');
-cv.width = W * HQ; cv.height = H * HQ;
+cv.width = Math.round(W * HQ); cv.height = Math.round(H * HQ);
+let _lay = innerWidth + 'x' + innerHeight;
+function relayout() { // xoay máy / đổi cỡ cửa sổ: tính lại khung hình, giữ nguyên ván đang chơi
+  const k = innerWidth + 'x' + innerHeight; if (k === _lay) return; _lay = k;
+  const camX = typeof cam === 'number' ? cam : 0, px = typeof P !== 'undefined' && P ? P.x : 0;
+  computeLayout(); cv.width = Math.round(W * HQ); cv.height = Math.round(H * HQ);
+  if (typeof cam === 'number' && P) cam = Math.max(0, px - 200);
+  document.body.classList.toggle('land', LANDSCAPE);
+}
+addEventListener('resize', () => setTimeout(relayout, 60));
+addEventListener('orientationchange', () => setTimeout(relayout, 250));
+document.addEventListener('DOMContentLoaded', () => document.body.classList.toggle('land', LANDSCAPE));
 const ctx = cv.getContext('2d');
 // ---------------- Ảnh (assets/manifest.json) ----------------
 const A = {}; const ASSET_BASE = window.ASSET_BASE || 'assets/'; let EXT = '.png';
@@ -1449,8 +1475,8 @@ function layerX(name, par, bottom, h, alpha = 1) {
 function drawBG() {
   const sky = img('bg_sky');
   if (!sky) return drawBG_old();
-  const sw = sky.naturalWidth * VIEW_H / sky.naturalHeight;
-  ctx.drawImage(sky, W - sw + 120, VIEW_Y, sw, VIEW_H);
+  const sc = Math.max(VIEW_H / sky.naturalHeight, (W + 120) / sky.naturalWidth), sw = sky.naturalWidth * sc, sh = sky.naturalHeight * sc;
+  ctx.drawImage(sky, W - sw + 120, VIEW_Y + Math.min(0, VIEW_H - sh) * 0.35, sw, sh); // phủ kín cả màn hình ngang
   for (let i = 0; i < 5; i++) {
     const span = W + 700, x = (((i * 430 - cam * Z * 0.06 - timeAcc * 14) % span) + span) % span - 350;
     ctx.globalAlpha = 0.95; spr('cloud', i, x, VIEW_Y + 150 + (i % 3) * 75, 60 + (i % 2) * 40); ctx.globalAlpha = 1;
