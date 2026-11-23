@@ -43,6 +43,8 @@
   #levelGrid button.b{background:linear-gradient(180deg,#b33b3b,#7a1f1f);box-shadow:0 4px 0 #4a0f0f}
   #levelGrid button:disabled{background:#2a2238;box-shadow:none;color:#6b5e85}
   .throw.empty{filter:grayscale(1);opacity:.55}
+  /* màn dọc: nút ném nằm trên phần đất, ngay dưới đường đi, lệch phải */
+  @media (orientation: portrait){ .throw{right:calc(23.7vw - 59px) !important;bottom:calc(14.7vh - 59px) !important} }
 
   /* ---- Sơ đồ chặng (kiểu đường uốn lượn) ---- */
   #levels.map{padding:0;gap:0;justify-content:flex-start;background:#fff}
@@ -83,7 +85,7 @@
   .mlock{position:sticky;top:30%;margin:0 auto;width:min(82%,380px);background:rgba(255,255,255,.96);color:#2b1a0e;border-radius:20px;padding:18px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:2}
   .mlock h3{margin:6px 0 4px;font-size:20px}.mlock p{margin:6px 0;font-size:14px;color:#5a4a33}.mlock .soon{display:inline-block;margin-top:6px;background:#ffb703;color:#3a1600;font-weight:900;border-radius:12px;padding:5px 12px}
   /* nút ném: màn dọc ở góc phải dưới, nằm trên phần đất bên dưới đường đi; màn ngang đặt cao bên phải */
-  @media (orientation: landscape) and (max-height: 560px){ .throw{min-width:84px !important;height:84px !important;font-size:15px !important;bottom:auto !important;top:calc(env(safe-area-inset-top) + 130px)} }
+  @media (orientation: landscape) and (max-height: 560px){ .throw{min-width:84px !important;height:84px !important;font-size:15px !important;right:calc(24.4vw - 42px) !important;bottom:calc(21vh - 42px) !important} }
   .throw{pointer-events:auto;position:absolute;right:16px;bottom:calc(env(safe-area-inset-bottom) + 28px);min-width:118px;height:118px;border-radius:50%;font-size:19px;line-height:1.15;background:radial-gradient(circle at 40% 35%,#ffe066,#f08c00);color:#3a1600;border:4px solid #fff;box-shadow:0 6px 0 #8a4b00;touch-action:none}
   .throw:active{transform:translateY(4px);box-shadow:none}
   .rec{pointer-events:auto;position:absolute;top:calc(env(safe-area-inset-top) + 70px);right:12px;min-width:48px;height:48px;border-radius:24px;background:rgba(20,6,40,.6);font-size:20px;color:#ff6b6b;border:2px solid rgba(255,255,255,.35);z-index:5;padding:0 10px}
@@ -202,6 +204,8 @@ function computeLayout() {
   else { W = 1080; H = Math.round(Math.max(1500, Math.min(2400, W * ih / iw))); Z = 1.7; }
   VIEW_H = H; BOTTOM_Y = VIEW_Y + VIEW_H; VW = W / Z;
   ROW0 = ROWS + 0.5 - VIEW_H / (T * Z);
+  // màn dọc: nâng mặt đường lên khoảng 73% chiều cao (phần đất bên dưới rộng hơn, có chỗ đặt nút ném)
+  if (!LANDSCAPE) ROW0 = Math.max(ROW0, 14 - 0.73 * VIEW_H / (T * Z));
   // Giữ đúng tỉ lệ khung game: nếu màn quá dài/quá ngắn thì chừa viền, KHÔNG kéo giãn hình
   const k = Math.min(iw / W, ih / H);
   CSS_W = Math.round(W * k); CSS_H = Math.round(H * k);
@@ -1838,6 +1842,10 @@ function drawWorld() {
     const top = img('water', hash(tx) < 0.25 ? 1 : hash(tx) < 0.45 ? 2 : 0), deep = img('water', 3);
     if (top) ctx.drawImage(top, 0, top.naturalHeight * 0.12, top.naturalWidth, top.naturalHeight * 0.88, tx * T, (ROWS - 3) * T + 20, T + 1, T);
     if (deep) { ctx.drawImage(deep, tx * T, (ROWS - 2) * T + 18, T + 1, T); ctx.drawImage(deep, tx * T, (ROWS - 1) * T + 16, T + 1, T + 10); } }
+  { // lớp đất phía dưới đáy thế giới (lộ ra khi nâng mặt đường ở màn dọc)
+    const im = img('tile_fill'), x0p = Math.floor(cam / T) * T - T, x1p = cam + VW + T, yb = ROWS * T, hb = 12 * T;
+    if (im) { for (let x = x0p; x < x1p; x += T) for (let y = yb; y < yb + hb; y += T) ctx.drawImage(im, x, y, T + 1, T + 1); }
+    else { ctx.fillStyle = '#7a3e22'; ctx.fillRect(x0p, yb, x1p - x0p, hb); } }
   for (const p of parts) {
     if (p.k === 'img') { spr(p.name, p.f, p.x, p.y, p.h); continue; }
     if (p.k === 'coin') { ctx.fillStyle = '#ffd43b'; ctx.fillRect(p.x, p.y, 24, 30); ctx.fillStyle = '#f08c00'; ctx.fillRect(p.x + 9, p.y + 6, 6, 18); }
