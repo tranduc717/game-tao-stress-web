@@ -253,27 +253,33 @@ fetch(ASSET_BASE + 'manifest.json').then(r => r.json()).then(m => { MAN = m; EXT
 }).catch(() => { LOAD.ready = true; });
 function img(name, i = 0) { const a = A[name]; if (!a || !a.length) return null; const im = a[((i % a.length) + a.length) % a.length]; return im && im.complete && im.naturalWidth ? im : null; }
 // vẽ một khung ảnh, neo ở giữa-đáy (cx, by), cao h; flip = lật ngang
-// ---- Đợt 2: viền đậm cho mọi thứ CHẠM VÀO ĐƯỢC (vật cản, con vật, xe, người rượt) ----
-// Quy tắc art 3 lớp: nền nhạt · trang trí hơi mờ · vật nguy hiểm viền đậm + bóng đổ
-const OL_SET = new Set(['stakes', 'ob_branch', 'ob_rock', 'ob_straw', 'ob_banana', 'boulder', 'boss', 'buffmom', 'bull', 'cat', 'crab', 'dog', 'dogmom', 'duck', 'frog', 'goat', 'goose', 'hen', 'muscovy', 'pig', 'rat', 'rooster', 'snake', 'turtle', 'monkey', 'wasp', 'fish',
+// ---- Viền phát sáng cho mọi thứ CHẠM VÀO ĐƯỢC ----
+// Vật cản (bụi gai, ụ rơm, cây đổ, đá): viền đỏ pastel + quầng sáng đỏ nhẹ.
+// Con vật, xe, người rượt: chỉ có quầng sáng nhẹ, không viền đen.
+const OB_SET = new Set(['stakes', 'ob_branch', 'ob_rock', 'ob_straw', 'ob_banana', 'boulder']);
+const AN_SET = new Set(['boss', 'buffmom', 'bull', 'cat', 'crab', 'dog', 'dogmom', 'duck', 'frog', 'goat', 'goose', 'hen', 'muscovy', 'pig', 'rat', 'rooster', 'snake', 'turtle', 'monkey', 'wasp', 'fish',
   'v_bagac', 'v_dap', 'v_dien', 'v_oto', 'v_so', 'n1_run', 'n1_jump', 'n2_run', 'n2_jump', 'n3_run', 'n3_jump', 'n4_run', 'n4_jump']);
-const OL_PAD = 3, OL_COLOR = '#1a0d05', _ol = new Map();
-function outlined(im) {
-  let c = _ol.get(im); if (c) return c;
-  const w = im.naturalWidth, h = im.naturalHeight, p = OL_PAD;
+const OL_PAD = 10, _ol = new Map();
+function silhouette(im, color) { const w = im.naturalWidth, h = im.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+  g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = color; g.fillRect(0, 0, w, h); return c; }
+function outlined(im, kind) {
+  const key = kind + '|' + im.src; if (_ol.has(key)) return _ol.get(key);
+  let c = null;
   try {
-    const sil = document.createElement('canvas'); sil.width = w; sil.height = h; const sg = sil.getContext('2d');
-    sg.drawImage(im, 0, 0); sg.globalCompositeOperation = 'source-in'; sg.fillStyle = OL_COLOR; sg.fillRect(0, 0, w, h);
+    const w = im.naturalWidth, h = im.naturalHeight, p = OL_PAD, ob = kind === 'ob';
     c = document.createElement('canvas'); c.width = w + 2 * p; c.height = h + 2 * p; const g = c.getContext('2d');
-    for (let a = 0; a < 12; a++) { const t = a / 12 * Math.PI * 2; g.drawImage(sil, p + Math.cos(t) * p, p + Math.sin(t) * p); }
+    const glow = silhouette(im, ob ? '#ff8a8a' : '#fff4c4');
+    for (const [r, a] of [[9, 0.07], [7, 0.09], [5, 0.12], [3, 0.16]]) { g.globalAlpha = a * (ob ? 1 : 1.25); for (let k = 0; k < 16; k++) { const t = k / 16 * Math.PI * 2; g.drawImage(glow, p + Math.cos(t) * r, p + Math.sin(t) * r); } }
+    g.globalAlpha = 1;
+    if (ob) { const ring = silhouette(im, '#ff9b9b'); for (let k = 0; k < 12; k++) { const t = k / 12 * Math.PI * 2; g.drawImage(ring, p + Math.cos(t) * 2.6, p + Math.sin(t) * 2.6); } }
     g.drawImage(im, p, p);
   } catch (e) { c = null; }
-  _ol.set(im, c); return c;
+  _ol.set(key, c); return c;
 }
 function spr(name, i, cx, by, h, flip = false) {
   const im = img(name, i); if (!im) return false;
   const w = im.naturalWidth * h / im.naturalHeight;
-  const oc = OL_SET.has(name) ? outlined(im) : null;
+  const oc = OB_SET.has(name) ? outlined(im, 'ob') : AN_SET.has(name) ? outlined(im, 'an') : null;
   if (oc) { const s = h / im.naturalHeight, ps = OL_PAD * s;
     if (flip) { ctx.save(); ctx.translate(cx, 0); ctx.scale(-1, 1); ctx.drawImage(oc, -w / 2 - ps, by - h - ps, w + 2 * ps, h + 2 * ps); ctx.restore(); }
     else ctx.drawImage(oc, cx - w / 2 - ps, by - h - ps, w + 2 * ps, h + 2 * ps);
@@ -1753,7 +1759,7 @@ function drawTile(t, sx, sy, b, tx, ty) {
   const ti = TILE_IMG[t];
   if (t === BRIDGE || t === BLK) return;
   if (ti) { const im = img(ti[0], ti[1]); if (im) { ctx.drawImage(im, sx, sy, T + 1, T + 1); return; } }
-  if (t === SPIKE && spr('stakes', 3, sx + T / 2, sy + T + 6, 78)) return;
+  if (t === SPIKE && spr('stakes', 3, sx + T / 2, sy + T + 28, 80)) return; // chân bụi gai nằm giữa mặt đường như ụ rơm
   const B = BIOMES[b];
   switch (t) {
     case GRASS: case FAKE_G:
@@ -1817,7 +1823,9 @@ function drawWorld() {
     if (d.k === 'tree') { ctx.fillStyle = '#7a4a1e'; ctx.fillRect(x - 18, gy - 260, 40, 260); ctx.fillStyle = '#2f9e44'; ctx.beginPath(); ctx.ellipse(x, gy - 330, 170, 120, 0, 0, 7); ctx.fill(); ctx.fillStyle = '#40c057'; ctx.beginPath(); ctx.ellipse(x - 40, gy - 360, 90, 60, 0, 0, 7); ctx.fill(); }
   }
   if (fadeDecor) ctx.filter = 'none';
-  for (let tx = x0; tx <= x1; tx++) { const c = cols.get(tx); if (!c) continue; for (let ty = 0; ty < ROWS; ty++) { const t = c.t[ty]; if (t && t !== HIDDEN) drawTile(t, tx * T, ty * T, c.b, tx, ty); } }
+  for (let tx = x0; tx <= x1; tx++) { const c = cols.get(tx); if (!c) continue; for (let ty = 0; ty < ROWS; ty++) { const t = c.t[ty]; if (t && t !== HIDDEN && t !== SPIKE) drawTile(t, tx * T, ty * T, c.b, tx, ty); } }
+  // bụi gai vẽ sau mặt đất để chân bụi nằm giữa mặt đường
+  for (let tx = x0; tx <= x1; tx++) { const c = cols.get(tx); if (!c) continue; for (let ty = 0; ty < ROWS; ty++) if (c.t[ty] === SPIKE) drawTile(SPIKE, tx * T, ty * T, c.b, tx, ty); }
   // cầu khỉ
   for (const g of groups.values()) { const b = g.bridge; if (!b || b.x0 > x1 + 2 || b.x0 + b.w < x0 - 2) continue;
     const L = b.x0 * T, R = (b.x0 + b.w) * T, gy = b.g * T;
@@ -1858,7 +1866,7 @@ function drawBG_world() {}
 function drawEnt(e) {
   if (drawOther(e)) return;
   switch (e.k) {
-    case 'pop': if (e.rise > 0 && !spr('stakes', Math.min(3, 1 + Math.floor(e.rise * 3)), e.x + T / 2, e.y + T + 6, 78)) drawSpike(e.x, e.y + T, T, T * 0.9 * e.rise); break;
+    case 'pop': if (e.rise > 0 && !spr('stakes', Math.min(3, 1 + Math.floor(e.rise * 3)), e.x + T / 2, e.y + T + 28, 80)) drawSpike(e.x, e.y + T, T, T * 0.9 * e.rise); break;
     case 'apple': if (spr('fruit', e.fruit ?? 1, e.x + 11, e.y + 24, e.fruit === 3 ? 28 : 20)) break; ctx.fillStyle = '#e03131'; ctx.beginPath(); ctx.arc(e.x + 17, e.y + 19, 16, 0, 7); ctx.fill(); ctx.fillStyle = '#ff8787'; ctx.fillRect(e.x + 8, e.y + 10, 6, 6); ctx.fillStyle = '#2b8a3e'; ctx.fillRect(e.x + 16, e.y - 2, 4, 8); ctx.fillRect(e.x + 20, e.y, 8, 4); break;
     case 'thwomp': if (e.item) { drawItem(e.item, e.x + e.w / 2, e.y + e.h / 2, 86, e.landed ? 0.25 : Math.sin(timeAcc * 9) * 0.25); break; } if (spr('boulder', e.on ? (e.landed ? 1 : 2) : 0, e.x + e.w / 2, e.y + e.h + 8, e.h + 20)) break; ctx.fillStyle = '#868e96'; ctx.fillRect(e.x, e.y, e.w, e.h); ctx.fillStyle = '#495057'; ctx.fillRect(e.x, e.y + e.h - 10, e.w, 10);
       ctx.fillStyle = '#fff'; ctx.fillRect(e.x + 22, e.y + 34, 22, 18); ctx.fillRect(e.x + 66, e.y + 34, 22, 18); ctx.fillStyle = '#000'; ctx.fillRect(e.x + 32, e.y + 40, 10, 10); ctx.fillRect(e.x + 70, e.y + 40, 10, 10);
@@ -2460,8 +2468,31 @@ function drawWarns() {
     ctx.fill(); ctx.restore();
   }
 }
+// ---- NHỊP CON VẬT: 7 giây đầu mỗi chặng chỉ có con vật đơn giản, sau đó mức trung bình ----
+// (mức "khó" là bản cũ có Trùm Troll thả bẫy liên tục; mức trung bình: 1 đợt con vật mỗi 4,5–7 giây, luôn báo trước)
+const EASY_ANIMALS = ['duck', 'hen', 'frog', 'rat'];
+const MEDIUM_WAVES = ['walkers', 'walkers', 'goose', 'dog', 'rooster', 'crab', 'walkers', 'goat'];
+function animalTick(dt) {
+  if (!P || !P.alive || (arena && arena.active) || gen.finished) return;
+  run.t = (run.t || 0) + dt;
+  if (run.nextA == null) run.nextA = 2.5;
+  if (run.t < run.nextA) return;
+  const early = run.t < 7;
+  run.nextA = run.t + (early ? rand(2.5, 3.5) : rand(4.5, 7));
+  const f = findGroundAhead(9, 14); if (!f && !early) return;
+  if (early) { if (f) addEnt(makeCritter(pick(EASY_ANIMALS), f.tx * T + 6, f.g * T, null)); return; }
+  switch (pick(MEDIUM_WAVES)) {
+    case 'walkers': for (let i = 0; i < irand(1, 2); i++) { const g2 = groundTop(f.tx + i * 2); if (g2 > 0) addEnt(makeCritter(pick(WALKERS.filter(w => w !== 'pig')), (f.tx + i * 2) * T + 6, g2 * T, null)); } break;
+    case 'goose': { const e = addEnt(makeCritter('goose', f.tx * T, f.g * T, null)); e.vx *= 1.2; SFX.honk && SFX.honk(); break; }
+    case 'dog': fireTrigger('dog', null); break;
+    case 'rooster': fireTrigger('rooster', null); break;
+    case 'crab': addEnt(makeCritter('crab', f.tx * T, f.g * T, null)); break;
+    case 'goat': addEnt(makeCritter('goat', f.tx * T, f.g * T, null)); break;
+  }
+}
 function playTick(dt) {
   warnTick(dt);
+  if (state === 'play') animalTick(dt);
   if (P.onGround) P.lastGroundAt = performance.now();
   if (state !== 'play') return;
   GAME.trollT -= dt;
